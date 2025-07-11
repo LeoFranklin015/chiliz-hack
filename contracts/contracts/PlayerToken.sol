@@ -56,9 +56,9 @@ contract PlayerToken is ERC20, Ownable {
     );
 
     constructor(
-        // string memory _name,
-        // string memory _symbol
-    ) ERC20("name", "symbol") Ownable(msg.sender) {
+        string memory name,
+        string memory symbol
+    ) ERC20(name, symbol) Ownable(msg.sender) {
         // Initialize in separate function to avoid stack too deep
     }
 
