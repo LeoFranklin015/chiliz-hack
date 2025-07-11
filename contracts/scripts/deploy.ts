@@ -1,11 +1,15 @@
 import { ethers } from "hardhat";
+import { PlayerToken as PlayerTokenType } from "../typechain-types/contracts/PlayerToken";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
   const PlayerToken = await ethers.getContractFactory("PlayerToken");
-  const playerToken = await PlayerToken.deploy("PlayerToken", "PT");
+  const playerToken = (await PlayerToken.deploy(
+    "PlayerToken",
+    "PT"
+  )) as unknown as PlayerTokenType;
   await playerToken.waitForDeployment();
   console.log("PlayerToken deployed to:", playerToken.target);
 
@@ -40,6 +44,10 @@ async function main() {
   const txStats = await playerToken.updatePlayerStats(stats);
   await txStats.wait();
   console.log("Player stats updated");
+
+  // Fetch and print the calculated price
+  const price = await playerToken.getPrice();
+  console.log("Calculated PlayerToken price:", price.toString());
 }
 
 main().catch((error) => {

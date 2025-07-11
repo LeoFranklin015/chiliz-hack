@@ -31,7 +31,6 @@ contract PlayerToken is ERC20, Ownable {
         uint256 appearances;
         uint256 yellow_cards;
         uint256 red_cards;
-        
         // Metadata
         uint256 lastUpdated;
     }
@@ -170,4 +169,73 @@ contract PlayerToken is ERC20, Ownable {
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);
     }
+
+    // Calculate player performance based on stats and position (using only available fields)
+    function calculatePerformance(string memory position) public view returns (uint8) {
+        uint256 score = 0;
+        bytes32 pos = keccak256(abi.encodePacked(toLower(position)));
+        if (pos == keccak256(abi.encodePacked("attacker"))) {
+            score = 5 * playerStats.goals +
+                    3 * playerStats.assists +
+                    2 * playerStats.shots_on_target +
+                    1 * playerStats.duels_won;
+            if (score > 100) score = 100;
+            score = score / 10;
+        } else if (pos == keccak256(abi.encodePacked("defender"))) {
+            int256 tempScore = int256(
+                4 * playerStats.tackles_total +
+                2 * playerStats.duels_won
+            ) - int256(2 * (playerStats.yellow_cards + playerStats.red_cards));
+            if (tempScore < 0) tempScore = 0;
+            if (tempScore > 100) tempScore = 100;
+            score = uint256(tempScore) / 10;
+        } else if (pos == keccak256(abi.encodePacked("goalkeeper"))) {
+            uint256 cardPenalty = (playerStats.yellow_cards + 2 * playerStats.red_cards) * 10;
+            uint256 cardFactor = cardPenalty > 100 ? 0 : 100 - cardPenalty;
+            score = cardFactor / 10;
+        } else if (pos == keccak256(abi.encodePacked("midfielder"))) {
+            score = 3 * playerStats.goals +
+                    4 * playerStats.assists +
+                    1 * playerStats.duels_won;
+            if (score > 100) score = 100;
+            score = score / 10;
+        } else {
+            score = (playerStats.goals + playerStats.assists + playerStats.duels_won) / 3;
+            if (score < 1) score = 1;
+            else if (score > 10) score = 10;
+            return uint8(score);
+        }
+        if (score < 1) score = 1;
+        if (score > 10) score = 10;
+        return uint8(score);
+    }
+
+    // Helper function to lowercase a string (ASCII only)
+    function toLower(string memory str) internal pure returns (string memory) {
+        bytes memory bStr = bytes(str);
+        bytes memory bLower = new bytes(bStr.length);
+        for (uint i = 0; i < bStr.length; i++) {
+            if ((uint8(bStr[i]) >= 65) && (uint8(bStr[i]) <= 90)) {
+                bLower[i] = bytes1(uint8(bStr[i]) + 32);
+            } else {
+                bLower[i] = bStr[i];
+            }
+        }
+        return string(bLower);
+    }
+
+    // Get the price of the player token based on supply, demand, and performance
+    function getPrice() public view returns (uint256) {
+        uint256 supply = totalSupply();
+        // Demand proxy: tokens not held by owner (could be improved with real demand tracking)
+        uint256 demand = supply - balanceOf(owner());
+        if (supply == 0) return 0;
+        uint8 perf = calculatePerformance(playerMetadata.position);
+        // Base price in wei (e.g., 1 ether for scaling)
+        uint256 base = 1 ether;
+        // Price formula: base * (performance + demand) / (supply + 1)
+        uint256 price = base * (uint256(perf) + demand) / (supply + 1);
+        return price;
+    }
+    
 }
