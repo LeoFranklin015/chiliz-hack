@@ -127,8 +127,22 @@ contract PlayerToken is ERC20, Ownable {
         );
     }
 
-    function getPlayerMetadata() external view returns (PlayerMetadata memory) {
-        return playerMetadata;
+    function getPlayerMetadata() external view returns (
+        uint256 playerId,
+        string memory name,
+        string memory teamname,
+        string memory position,
+        string memory league,
+        string memory season
+    ) {
+        return (
+            playerMetadata.playerId,
+            playerMetadata.name,
+            playerMetadata.teamname,
+            playerMetadata.position,
+            playerMetadata.league,
+            playerMetadata.season
+        );
     }
 
     function getPlayerStats() external view returns (
