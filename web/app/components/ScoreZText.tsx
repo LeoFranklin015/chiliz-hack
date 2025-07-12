@@ -98,7 +98,7 @@ const ScoreXText: React.FC<ScoreXTextProps> = ({
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
       <p 
         ref={ref} 
-        className={`text-7xl font-weight-700 md:text-8xl font-red text-red tracking-wider gaming-text ${className} flex`}
+        className={`text-7xl font-weight-700 md:text-8xl tracking-wider gaming-text ${className} flex`}
        
       >
         {elements.map((segment, index) => {
@@ -110,6 +110,10 @@ const ScoreXText: React.FC<ScoreXTextProps> = ({
             delay: (index * delay) / 1000,
           };
           (spanTransition as any).ease = easing;
+
+          // Determine color based on character position
+          const isZ = segment === "Z";
+          const textColor = isZ ? "text-red-700" : "text-white";
 
           return (
             <motion.span
@@ -124,6 +128,7 @@ const ScoreXText: React.FC<ScoreXTextProps> = ({
                 display: "inline-block",
                 willChange: "transform, filter, opacity",
               }}
+              className={textColor}
             >
               {segment === " " ? "\u00A0" : segment}
               {animateBy === "words" && index < elements.length - 1 && "\u00A0"}

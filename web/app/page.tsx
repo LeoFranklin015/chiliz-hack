@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState, useRef } from "react"
 import { motion } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 import FootballScene from "./components/FootBallScene"
-import ScoreXText from "./components/ScoreXText"
+import ScoreZText from "./components/ScoreZText"
 import FeaturesSection from "./components/FeaturesSection"
 
 // Component to handle navbar padding
@@ -165,7 +165,7 @@ export default function Home() {
             </div>
 
             {/* ScoreX Text Overlay */}
-            <ScoreXText 
+            <ScoreZText 
               showText={showText}
             />
 
