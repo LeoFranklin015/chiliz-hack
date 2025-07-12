@@ -83,12 +83,12 @@ const CircularCarousel = React.forwardRef<
         </div>
         {/* Navigation buttons below the card */}
         <div
-          className="flex items-center justify-center gap-8 mt-8 z-50"
+          className="flex items-center justify-center mt-[-32px] gap-8 z-50"
           style={{ position: "relative" }}
         >
           <button
             onClick={handlePrev}
-            className="z-50 bg-white text-black border border-lime-400 hover:bg-lime-400 hover:text-black rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-lime-400"
+            className="z-50 bg-zinc-800/80 text-white border border-red-500/50 hover:bg-red-500/20 hover:border-red-400 rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 backdrop-blur-sm "
             aria-label="Previous"
             style={{ fontSize: 24 }}
           >
@@ -96,7 +96,7 @@ const CircularCarousel = React.forwardRef<
           </button>
           <button
             onClick={handleNext}
-            className="z-50 bg-white text-black border border-lime-400 hover:bg-lime-400 hover:text-black rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-lime-400"
+            className="z-50 bg-zinc-800/80 text-white border border-red-500/50 hover:bg-red-500/20 hover:border-red-400 rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 backdrop-blur-sm"
             aria-label="Next"
             style={{ fontSize: 24 }}
           >

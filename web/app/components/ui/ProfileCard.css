@@ -13,12 +13,12 @@
   --icon: none;
   --behind-gradient: none;
   --inner-gradient: none;
-  --sunpillar-1: hsl(2, 100%, 73%);
-  --sunpillar-2: hsl(53, 100%, 69%);
-  --sunpillar-3: hsl(93, 100%, 69%);
-  --sunpillar-4: hsl(176, 100%, 76%);
-  --sunpillar-5: hsl(228, 100%, 74%);
-  --sunpillar-6: hsl(283, 100%, 73%);
+  --sunpillar-1: hsl(0, 100%, 60%);
+  --sunpillar-2: hsl(0, 90%, 65%);
+  --sunpillar-3: hsl(0, 80%, 70%);
+  --sunpillar-4: hsl(0, 70%, 75%);
+  --sunpillar-5: hsl(0, 60%, 80%);
+  --sunpillar-6: hsl(0, 50%, 85%);
   --sunpillar-clr-1: var(--sunpillar-1);
   --sunpillar-clr-2: var(--sunpillar-2);
   --sunpillar-clr-3: var(--sunpillar-3);
@@ -38,15 +38,22 @@
 .pc-card-wrapper::before {
   content: "";
   position: absolute;
-  inset: -10px;
+  inset: -15px;
   background: inherit;
   background-position: inherit;
   border-radius: inherit;
   transition: all 0.5s ease;
-  filter: contrast(2) saturate(2) blur(36px);
-  transform: scale(0.8) translate3d(0, 0, 0.1px);
+  filter: contrast(1.5) saturate(1.8) blur(40px);
+  transform: scale(0.85) translate3d(0, 0, 0.1px);
   background-size: 100% 100%;
-  background-image: var(--behind-gradient);
+  background-image: radial-gradient(
+    farthest-side circle at var(--pointer-x) var(--pointer-y),
+    hsla(0, 100%, 90%, var(--card-opacity)) 4%,
+    hsla(0, 50%, 80%, calc(var(--card-opacity) * 0.75)) 10%,
+    hsla(0, 25%, 70%, calc(var(--card-opacity) * 0.5)) 50%,
+    hsla(0, 0%, 60%, 0) 100%
+  );
+  opacity: 0.6;
 }
 
 .pc-card-wrapper:hover,
@@ -56,13 +63,14 @@
 
 .pc-card-wrapper:hover::before,
 .pc-card-wrapper.active::before {
-  filter: contrast(1) saturate(2) blur(40px) opacity(1);
+  filter: contrast(1.2) saturate(1.5) blur(45px) opacity(0.8);
   transform: scale(0.9) translate3d(0, 0, 0.1px);
+  opacity: 0.8;
 }
 
 .pc-card {
-  height: 80svh;
-  max-height: 540px;
+  height: 420px;
+  width: 320px;
   display: grid;
   aspect-ratio: 0.718;
   border-radius: var(--card-radius);
@@ -77,19 +85,19 @@
   background-position: 0 0, 0 0, 50% 50%, 0 0;
   background-image: radial-gradient(
       farthest-side circle at var(--pointer-x) var(--pointer-y),
-      hsla(266, 100%, 90%, var(--card-opacity)) 4%,
-      hsla(266, 50%, 80%, calc(var(--card-opacity) * 0.75)) 10%,
-      hsla(266, 25%, 70%, calc(var(--card-opacity) * 0.5)) 50%,
-      hsla(266, 0%, 60%, 0) 100%
+      hsla(0, 100%, 90%, var(--card-opacity)) 4%,
+      hsla(0, 50%, 80%, calc(var(--card-opacity) * 0.75)) 10%,
+      hsla(0, 25%, 70%, calc(var(--card-opacity) * 0.5)) 50%,
+      hsla(0, 0%, 60%, 0) 100%
     ),
-    radial-gradient(35% 52% at 55% 20%, #00ffaac4 0%, #073aff00 100%),
-    radial-gradient(100% 100% at 50% 50%, #00c1ffff 1%, #073aff00 76%),
+    radial-gradient(35% 52% at 55% 20%, #CF0A0A44 0%, #073aff00 100%),
+    radial-gradient(100% 100% at 50% 50%, #CF0A0A22 1%, #073aff00 76%),
     conic-gradient(
       from 124deg at 50% 50%,
-      #c137ffff 0%,
-      #07c6ffff 40%,
-      #07c6ffff 60%,
-      #c137ffff 100%
+      #CF0A0A44 0%,
+      #CF0A0A22 40%,
+      #CF0A0A22 60%,
+      #CF0A0A44 100%
     );
   overflow: hidden;
 }
@@ -325,7 +333,7 @@
 .pc-handle {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: #CF0A0A;
   line-height: 1;
 }
 
@@ -341,7 +349,7 @@
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #CF0A0A;
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
@@ -373,19 +381,21 @@
   bottom: 16px;
   display: flex;
   flex-direction: column;
+  text-shadow: 0 0 10px rgba(139, 0, 0, 0.4);
   align-items: center;
 }
 
 .pc-details h3 {
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
-  font-size: min(5svh, 3em);
+  font-size: min(5svh, 2.5em);
   margin: 0;
-  background-image: linear-gradient(to bottom, #fff, #6f6fbe);
+  background-image: linear-gradient(to bottom, #CF0A0A, #8B0000);
   background-size: 1em 1.5em;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   -webkit-background-clip: text;
+  text-shadow: 0 0 10px rgba(139, 0, 0, 0.4);
 }
 
 .pc-details p {
@@ -393,14 +403,15 @@
   position: relative;
   top: -12px;
   white-space: nowrap;
-  font-size: 16px;
+  font-size: 14px;
   margin: 0 auto;
   width: min-content;
-  background-image: linear-gradient(to bottom, #fff, #4a4ac0);
+  background-image: linear-gradient(to bottom, #CF0A0A, #8B0000);
   background-size: 1em 1.5em;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   -webkit-background-clip: text;
+  text-shadow: 0 0 8px rgba(139, 0, 0, 0.3);
 }
 
 @keyframes glow-bg {
@@ -425,8 +436,8 @@
 
 @media (max-width: 768px) {
   .pc-card {
-    height: 70svh;
-    max-height: 450px;
+    height: max-content;
+    width: 280px;
   }
 
   .pc-details {
@@ -434,11 +445,11 @@
   }
 
   .pc-details h3 {
-    font-size: min(4svh, 2.5em);
+    font-size: min(4svh, 2.2em);
   }
 
   .pc-details p {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .pc-user-info {
@@ -473,8 +484,8 @@
 
 @media (max-width: 480px) {
   .pc-card {
-    height: 60svh;
-    max-height: 380px;
+    height: max-content;
+    width: 240px;
   }
 
   .pc-details {
@@ -482,11 +493,11 @@
   }
 
   .pc-details h3 {
-    font-size: min(3.5svh, 2em);
+    font-size: min(3.5svh, 1.8em);
   }
 
   .pc-details p {
-    font-size: 12px;
+    font-size: 11px;
     top: -8px;
   }
 
@@ -524,16 +535,16 @@
 
 @media (max-width: 320px) {
   .pc-card {
-    height: 55svh;
-    max-height: 320px;
+    height: max-content;
+    width: 200px;
   }
 
   .pc-details h3 {
-    font-size: min(3svh, 1.5em);
+    font-size: min(3svh, 1.4em);
   }
 
   .pc-details p {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .pc-user-info {

@@ -123,9 +123,9 @@ export default function TeamSelection() {
               <button
                 onClick={selectPrev}
                 aria-label="Previous Team"
-                className="w-12 h-12 flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition-colors rounded-lg"
+                className="w-12 h-12 flex items-center justify-center bg-zinc-800/80 border border-red-500/50 hover:bg-red-500/20 hover:border-red-400 transition-all duration-300 rounded-lg backdrop-blur-sm"
               >
-                <ArrowLeft className="w-6 h-6 text-white" />
+                <ArrowLeft className="w-6 h-6 text-red-400 hover:text-red-300 transition-colors" />
               </button>
             </div>
 
@@ -134,9 +134,9 @@ export default function TeamSelection() {
               <button
                 onClick={selectNext}
                 aria-label="Next Team"
-                className="w-12 h-12 flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition-colors rounded-lg"
+                className="w-12 h-12 flex items-center justify-center bg-zinc-800/80 border border-red-500/50 hover:bg-red-500/20 hover:border-red-400 transition-all duration-300 rounded-lg backdrop-blur-sm"
               >
-                <ArrowRight className="w-6 h-6 text-white" />
+                <ArrowRight className="w-6 h-6 text-red-400 hover:text-red-300 transition-colors" />
               </button>
             </div>
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { CircularCarousel } from "../components/ui/CircularCarousel";
 import ProfileCard from "../components/ui/ProfileCard";
 import PerformancePredictionGraph from "../components/PerformancePredictionGraph";
+import { useSearchParams } from "next/navigation";
 
 interface PlayerCard {
   id: number;
@@ -49,6 +50,10 @@ export default function PlayerPage() {
   const [detailedPlayerData, setDetailedPlayerData] = useState<any>(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [buyAmount, setBuyAmount] = useState(1);
+  const [teamName, setTeamName] = useState<string>("");
+  
+  const searchParams = useSearchParams();
+  const teamId = searchParams.get('team');
 
   // Keep selectedPlayer in sync with currentIndex
   useEffect(() => {
@@ -60,10 +65,15 @@ export default function PlayerPage() {
   // Fetch team players
   useEffect(() => {
     const fetchTeamPlayers = async () => {
+      if (!teamId) {
+        setError("No team ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // Using a popular team ID (Barcelona = 529)
-        const response = await fetch("/api/team-players?teamId=529");
+        const response = await fetch(`/api/team-players?teamId=${teamId}`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch team players");
@@ -91,6 +101,11 @@ export default function PlayerPage() {
             }
           );
           setPlayers(transformedPlayers);
+          
+          // Set team name from first player's team
+          if (data.response[0]?.statistics[0]?.team?.name) {
+            setTeamName(data.response[0].statistics[0].team.name);
+          }
         } else {
           setPlayers([]);
         }
@@ -134,13 +149,14 @@ export default function PlayerPage() {
             current_season_stats: { rating: 7.8 },
           },
         ]);
+        setTeamName("Barcelona"); // Fallback team name
       } finally {
         setLoading(false);
       }
     };
 
     fetchTeamPlayers();
-  }, []);
+  }, [teamId]);
 
   // Fetch detailed player data when a player is selected
   useEffect(() => {
@@ -172,9 +188,9 @@ export default function PlayerPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-white">
+      <main className="flex min-h-screen items-center justify-center text-white bg-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
           <p className="text-zinc-400">Loading players...</p>
         </div>
       </main>
@@ -183,7 +199,7 @@ export default function PlayerPage() {
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-white">
+      <main className="flex min-h-screen items-center justify-center text-white bg-black">
         <div className="text-center">
           <p className="text-red-400 mb-4">Error: {error}</p>
           <p className="text-zinc-500">Using fallback data</p>
@@ -196,7 +212,11 @@ export default function PlayerPage() {
     <main className="flex min-h-screen items-start justify-start overflow-hidden text-white">
       {/* Left side - Player Carousel */}
       <div className="w-1/2 p-8 flex flex-col items-center gap-6">
-        <h2 className="text-3xl font-bold text-white mb-2">Select Player</h2>
+        <div className="text-center mb-6">
+          <h2 className="text-4xl font-bold text-white mb-2">{teamName}</h2>
+          <h3 className="text-2xl font-thin text-red-400 uppercase tracking-wide">Select Player</h3>
+        </div>
+        
         {players.length > 0 ? (
           <>
             <div className="flex flex-col items-center gap-4 w-full">
@@ -221,37 +241,49 @@ export default function PlayerPage() {
               />
 
               {/* Buy Now Button */}
-              <div className="text-center mt-4">
+              <div className="text-center mt-6">
                 <button
-                  className="bg-lime-500 hover:bg-lime-600 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200"
+                  className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                  style={{
+                    background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                   
+                    border: "1px solid rgba(207, 10, 10, 0.5)",
+                    boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                  }}
                   onClick={() => setShowBuyModal(true)}
                 >
-                  Buy Now
+                  <span className="relative z-10">Buy Fan Token</span>
+                  <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 </button>
               </div>
             </div>
+            
             {/* Buy Modal */}
             {showBuyModal && selectedPlayer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                <div className="bg-zinc-900 border border-lime-400 rounded-xl p-8 w-full max-w-md relative">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+                <div className="bg-zinc-900 border border-red-500/50 rounded-xl p-8 w-full max-w-md relative">
                   <button
-                    className="absolute top-2 right-2 text-zinc-400 hover:text-white text-2xl"
+                    className="absolute top-4 right-4 text-zinc-400 hover:text-white text-2xl"
                     onClick={() => setShowBuyModal(false)}
                     aria-label="Close"
                   >
                     &times;
                   </button>
-                  <h3 className="text-2xl font-bold mb-4 text-lime-400">
+                  <h3 className="text-2xl font-bold mb-4 text-red-400">
                     Buy Fan Token
                   </h3>
                   <div className="mb-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-zinc-300">Player:</span>
+                      <span className="text-white font-semibold">{selectedPlayer.name}</span>
+                    </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-zinc-300">Availability:</span>
                       <span className="text-white font-semibold">1000</span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-zinc-300">Price:</span>
-                      <span className="text-lime-400 font-semibold">$2.50</span>
+                      <span className="text-red-400 font-semibold">$2.50</span>
                     </div>
                   </div>
                   <div className="mb-6">
@@ -267,13 +299,14 @@ export default function PlayerPage() {
                       min={1}
                       value={buyAmount}
                       onChange={(e) => setBuyAmount(Number(e.target.value))}
-                      className="w-full px-4 py-2 rounded-lg border border-zinc-600 bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                      className="w-full px-4 py-2 rounded-lg border border-zinc-600 bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-red-400"
                     />
                   </div>
                   <button
-                    className="w-full bg-lime-500 hover:bg-lime-600 text-black font-bold py-3 rounded-lg transition-all duration-200 text-lg"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-all duration-200 text-lg"
                     onClick={() => {
                       /* handle buy logic here */
+                      setShowBuyModal(false);
                     }}
                   >
                     Buy Fan Token
@@ -292,18 +325,21 @@ export default function PlayerPage() {
       {/* Right side - Performance Graph */}
       <div className="w-1/2 p-8 overflow-y-auto max-h-screen">
         {selectedPlayer ? (
-          <PerformancePredictionGraph
-            player={{
-              id: selectedPlayer.id,
-              name: selectedPlayer.name,
-              goals: selectedPlayer.goals || 0,
-              assists: selectedPlayer.assists || 0,
-              current_season_stats: {
-                rating: selectedPlayer.current_season_stats?.rating || 7.0,
-              },
-            }}
-            detailedData={detailedPlayerData}
-          />
+          <div className="h-full">
+            <h3 className="text-2xl font-bold text-white mb-6">Performance Analysis</h3>
+            <PerformancePredictionGraph
+              player={{
+                id: selectedPlayer.id,
+                name: selectedPlayer.name,
+                goals: selectedPlayer.goals || 0,
+                assists: selectedPlayer.assists || 0,
+                current_season_stats: {
+                  rating: selectedPlayer.current_season_stats?.rating || 7.0,
+                },
+              }}
+              detailedData={detailedPlayerData}
+            />
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">

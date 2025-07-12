@@ -185,21 +185,21 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
   const performanceData = generatePerformanceData(player);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-4 md:grid-rows-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Available Performance Header */}
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
-        <h3 className="text-2xl font-bold text-white mb-4">
+      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border border-zinc-700">
+        <h3 className="text-lg font-bold text-white mb-3">
           Available Performance
         </h3>
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-3">
           {performanceData.matchPerformance.map(
             (performance: any, index: number) => (
               <div
                 key={index}
-                className="flex justify-between items-center p-3 bg-zinc-800/40 rounded-lg"
+                className="flex justify-between items-center p-2 bg-zinc-800/40 rounded-lg"
               >
-                <span className="text-zinc-300">{performance.type}:</span>
-                <span className="text-lime-400 font-bold">
+                <span className="text-zinc-300 text-sm">{performance.type}:</span>
+                <span className="text-red-400 font-bold">
                   {performance.probability.toFixed(0)}%
                 </span>
               </div>
@@ -209,33 +209,33 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
       </div>
 
       {/* Radar Chart - Player vs Average */}
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
-        <h3 className="text-xl font-bold text-white mb-4 text-center">
+      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border border-zinc-700">
+        <h3 className="text-lg font-bold text-white mb-3 text-center">
           {player.name} vs League Average
         </h3>
-        <div className="h-72 md:h-96">
+        <div className="h-48 md:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={performanceData.radarData}>
               <PolarGrid stroke="#374151" />
               <PolarAngleAxis
                 dataKey="metric"
-                tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                tick={{ fill: "#9CA3AF", fontSize: 10 }}
               />
               <PolarRadiusAxis
                 angle={0}
                 domain={[0, 100]}
-                tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                tick={{ fill: "#9CA3AF", fontSize: 8 }}
                 axisLine={false}
                 tickCount={6}
               />
               <Radar
                 name={player.name}
                 dataKey="player"
-                stroke="#00ff88"
-                fill="#00ff88"
+                stroke="#CF0A0A"
+                fill="#CF0A0A"
                 fillOpacity={0.3}
                 strokeWidth={2}
-                dot={{ fill: "#00ff88", strokeWidth: 2, r: 4 }}
+                dot={{ fill: "#CF0A0A", strokeWidth: 2, r: 3 }}
               />
               <Radar
                 name="League Average"
@@ -244,7 +244,7 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
                 fill="#0088ff"
                 fillOpacity={0.1}
                 strokeWidth={2}
-                dot={{ fill: "#0088ff", strokeWidth: 2, r: 4 }}
+                dot={{ fill: "#0088ff", strokeWidth: 2, r: 3 }}
               />
               <Tooltip
                 contentStyle={{
@@ -257,32 +257,32 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
             </RadarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex justify-center space-x-8">
+        <div className="mt-3 flex justify-center space-x-6">
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-lime-400 rounded"></div>
-            <span className="text-zinc-300 text-sm">{player.name}</span>
+            <div className="w-3 h-3 bg-red-500 rounded"></div>
+            <span className="text-zinc-300 text-xs">{player.name}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-blue-400 rounded"></div>
-            <span className="text-zinc-300 text-sm">League Average</span>
+            <div className="w-3 h-3 bg-blue-400 rounded"></div>
+            <span className="text-zinc-300 text-xs">League Average</span>
           </div>
         </div>
       </div>
 
       {/* Performance Metrics (API-Football Style) */}
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
-        <h3 className="text-xl font-bold text-white mb-6">
+      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border border-zinc-700">
+        <h3 className="text-lg font-bold text-white mb-4">
           Performance Analysis
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {performanceData.performanceMetrics.map(
             (metric: any, index: number) => (
-              <div key={index} className="space-y-2">
+              <div key={index} className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-300 font-medium text-sm">
+                  <span className="text-zinc-300 font-medium text-xs">
                     {metric.name}
                   </span>
-                  <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex items-center space-x-3 text-xs">
                     <span className="text-zinc-400">
                       {metric.player.toFixed(0)}%
                     </span>
@@ -292,21 +292,21 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="w-full bg-zinc-700 rounded-full h-3">
+                  <div className="w-full bg-zinc-700 rounded-full h-2">
                     <div
-                      className="h-3 rounded-full transition-all duration-500"
+                      className="h-2 rounded-full transition-all duration-500"
                       style={{
                         width: `${metric.player}%`,
                         background: `linear-gradient(to right, ${metric.color}dd, ${metric.color})`,
                       }}
                     />
                   </div>
-                  <div className="absolute top-0 left-0 w-full h-3 flex items-center">
+                  <div className="absolute top-0 left-0 w-full h-2 flex items-center">
                     <div
-                      className="w-0.5 h-4 bg-zinc-400 relative"
+                      className="w-0.5 h-3 bg-zinc-400 relative"
                       style={{ marginLeft: `${metric.average}%` }}
                     >
-                      <div className="absolute -top-1 -left-1 w-2 h-2 bg-zinc-400 rounded-full"></div>
+                      <div className="absolute -top-1 -left-1 w-1.5 h-1.5 bg-zinc-400 rounded-full"></div>
                     </div>
                   </div>
                 </div>
@@ -314,44 +314,44 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
             )
           )}
         </div>
-        <div className="mt-4 flex justify-end space-x-4 text-xs text-zinc-500">
+        <div className="mt-3 flex justify-end space-x-3 text-xs text-zinc-500">
           <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-lime-400 rounded-full"></div>
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
             <span>Player</span>
           </div>
           <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-zinc-400 rounded-full"></div>
+            <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full"></div>
             <span>Average</span>
           </div>
         </div>
       </div>
 
       {/* Goal Performance (Under/Over Style) */}
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
-        <h3 className="text-xl font-bold text-white mb-4">Goal Performance</h3>
-        <div className="space-y-3">
+      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border border-zinc-700">
+        <h3 className="text-lg font-bold text-white mb-3">Goal Performance</h3>
+        <div className="space-y-2">
           {performanceData.goalPerformance.map(
             (performance: any, index: number) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-zinc-800/40 rounded-lg"
+                className="flex items-center justify-between p-2 bg-zinc-800/40 rounded-lg"
               >
-                <div className="flex items-center space-x-3">
-                  <span className="text-zinc-300">{performance.type}</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-zinc-300 text-xs">{performance.type}</span>
                   <span className="text-xs text-zinc-500">
                     {performance.type.includes("Under")
-                      ? "indicates maximum goals"
-                      : "indicates minimum goals"}
+                      ? "max goals"
+                      : "min goals"}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-16 bg-zinc-700 rounded-full h-2">
+                  <div className="w-12 bg-zinc-700 rounded-full h-1.5">
                     <div
-                      className="bg-gradient-to-r from-lime-400 to-blue-400 h-2 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-red-400 to-red-500 h-1.5 rounded-full transition-all duration-300"
                       style={{ width: `${performance.probability}%` }}
                     />
                   </div>
-                  <span className="text-lime-400 font-bold text-sm w-12">
+                  <span className="text-red-400 font-bold text-xs w-8">
                     {performance.probability.toFixed(0)}%
                   </span>
                 </div>

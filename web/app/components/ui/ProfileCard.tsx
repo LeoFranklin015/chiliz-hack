@@ -12,14 +12,8 @@ interface ProfileCardProps {
   showBehindGradient?: boolean;
   className?: string;
   enableTilt?: boolean;
-  miniAvatarUrl?: string;
   name?: string;
   title?: string;
-  handle?: string;
-  status?: string;
-  contactText?: string;
-  showUserInfo?: boolean;
-  onContactClick?: () => void;
 }
 
 const DEFAULT_BEHIND_GRADIENT =
@@ -62,14 +56,8 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   showBehindGradient = true,
   className = "",
   enableTilt = true,
-  miniAvatarUrl,
   name = "Javi A. Torres",
   title = "Software Engineer",
-  handle = "javicodes",
-  status = "Online",
-  contactText = "Contact",
-  showUserInfo = false,
-  onContactClick,
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -260,9 +248,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     [iconUrl, grainUrl, showBehindGradient, behindGradient, innerGradient]
   );
 
-  const handleContactClick = useCallback(() => {
-    onContactClick?.();
-  }, [onContactClick]);
+
 
   return (
     <div
@@ -288,7 +274,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             {/* Removed additional contact overlay as requested */}
           </div>
           <div className="pc-content">
-            <div className="pc-details">
+            <div className="pc-details text-red-600">
               <h3>{name}</h3>
               <p>{title}</p>
             </div>
