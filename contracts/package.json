@@ -8,14 +8,20 @@
     "mint-team-tokens": "npx hardhat run scripts/mint-team-tokens.ts --network spicy",
     "test-api": "npx hardhat run scripts/test-api.ts",
     "debug-api": "npx hardhat run scripts/debug-api.ts",
-    "deploy-team-tokens": "npx hardhat run scripts/deploy-team-tokens.ts --network spicy"
-  },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
-    "hardhat": "^2.25.0"
+    "update-stats": "npx hardhat run scripts/update-player-stats-cron.ts --network spicy",
+    "mongodb-registry": "npx hardhat run scripts/mongodb-registry.ts --network spicy"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",
-    "dotenv": "^17.2.0"
+    "@pythnetwork/entropy-sdk-solidity": "^2.0.0",
+    "dotenv": "^17.2.0",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
+    "@types/express": "^4.17.21",
+    "@types/node-cron": "^3.0.11",
+    "hardhat": "^2.25.0"
   }
 }
