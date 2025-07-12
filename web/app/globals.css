@@ -100,6 +100,24 @@ body {
   );
 }
 
+@layer utilities {
+  .animate-pulse-custom {
+    animation: pulse-custom 1s infinite;
+  }
+}
+
+@keyframes pulse-custom {
+  0% {
+    opacity: 0.1;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.1;
+  }
+}
+
 /* Gaming UI Glow Effects */
 @keyframes neon-pulse {
   0%,
@@ -150,7 +168,6 @@ body {
   z-index: 1000;
   pointer-events: none;
 }
-
 
 /* Holographic effect */
 @keyframes hologram {
@@ -320,8 +337,6 @@ body {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
-
-
 
 .text-gradient-red {
   background: linear-gradient(
