@@ -8,7 +8,8 @@ async function main() {
   const PlayerToken = await ethers.getContractFactory("PlayerToken");
   const playerToken = (await PlayerToken.deploy(
     "PlayerToken",
-    "PT"
+    "PT",
+    deployer.address // Use deployer as paymentToken for demo
   )) as unknown as PlayerTokenType;
   await playerToken.waitForDeployment();
   console.log("PlayerToken deployed to:", playerToken.target);
@@ -45,9 +46,17 @@ async function main() {
   await txStats.wait();
   console.log("Player stats updated");
 
-  // Fetch and print the calculated price
-  const price = await playerToken.getPrice();
-  console.log("Calculated PlayerToken price:", price.toString());
+  // Deploy MerchNFT
+  const MerchNFT = await ethers.getContractFactory("MerchNFT");
+  const merchNFT = await MerchNFT.deploy("MerchandiseNFT", "MERCH");
+  await merchNFT.waitForDeployment();
+  console.log("MerchNFT deployed to:", merchNFT.target);
+
+  // Deploy TicketContract
+  const TicketContract = await ethers.getContractFactory("TicketContract");
+  const ticketContract = await TicketContract.deploy();
+  await ticketContract.waitForDeployment();
+  console.log("TicketContract deployed to:", ticketContract.target);
 }
 
 main().catch((error) => {
