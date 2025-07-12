@@ -87,7 +87,7 @@ contract MerchNFT is ERC721URIStorage {
         );
 
         _safeMint(msg.sender, tokenId);
-        _setTokenURI(tokenId, string(abi.encodePacked("ipfs://", item.ipfsMetadataCID)));
+        _setTokenURI(tokenId, item.ipfsMetadataCID);
 
         emit MerchPurchased(merchId, msg.sender, tokenId, item.price, block.timestamp);
     }
