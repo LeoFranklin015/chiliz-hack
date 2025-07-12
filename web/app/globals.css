@@ -151,19 +151,6 @@ body {
   pointer-events: none;
 }
 
-/* Gaming border effects */
-.gaming-border {
-  border: 2px solid transparent;
-  background: linear-gradient(
-        45deg,
-        rgba(0, 255, 136, 0.1),
-        rgba(0, 255, 200, 0.1)
-      )
-      padding-box,
-    linear-gradient(45deg, rgba(0, 255, 136, 0.5), rgba(0, 255, 200, 0.5))
-      border-box;
-  border-radius: 8px;
-}
 
 /* Holographic effect */
 @keyframes hologram {
@@ -334,18 +321,7 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-strong,
-.text-primary,
-.text-accent,
-.text-red-gradient {
-  color: #cf0a0a !important;
-}
+
 
 .text-gradient-red {
   background: linear-gradient(

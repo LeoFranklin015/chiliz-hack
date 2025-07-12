@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 // helper to convert deg to rad
 const deg2rad = (deg: number) => (deg * Math.PI) / 180;
@@ -68,6 +69,7 @@ export default function TeamSelection() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     setLoading(true);
@@ -96,18 +98,50 @@ export default function TeamSelection() {
 
   const selectedTeam = teams[selectedIndex];
 
+  const handleTeamSelect = (teamId: number) => {
+    router.push(`/player?team=${teamId}`);
+  };
+
+  const handleExplorePlayer = () => {
+    if (selectedTeam) {
+      router.push(`/player?team=${selectedTeam.id}`);
+    }
+  };
+
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center text-white overflow-hidden font-sans px-4 sm:px-8">
+    <main className="relative  flex flex-col items-center justify-start text-white overflow-hidden font-sans px-4 sm:px-8">
       {/* Textured background overlay */}
       <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522509589783-7b2a85a04e9a?auto=format&fit=crop&w=1920&q=60')] bg-cover opacity-10 mix-blend-soft-light" />
 
-      <div className="relative z-10 flex flex-col w-full h-full items-center justify-center min-h-screen">
+      <div className="relative z-10 flex flex-col w-full  items-center justify-center min-h-screen">
         {loading && <div className="text-lg">Loading teams...</div>}
         {error && <div className="text-red-500">{error}</div>}
         {!loading && !error && teams.length > 0 && (
-          <div className="flex flex-col md:flex-row w-full max-w-5xl items-center justify-center gap-12 md:gap-24 py-12">
-            {/* Left: Wheel */}
-            <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center w-full max-w-6xl">
+            {/* Left Arrow */}
+            <div className="absolute left-[300px]  -translate-y-1/2 z-20 ml-4">
+              <button
+                onClick={selectPrev}
+                aria-label="Previous Team"
+                className="w-12 h-12 flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition-colors rounded-lg"
+              >
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Right Arrow */}
+            <div className="absolute right-[300px]  -translate-y-1/2 z-20 mr-4">
+              <button
+                onClick={selectNext}
+                aria-label="Next Team"
+                className="w-12 h-12 flex items-center justify-center bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition-colors rounded-lg"
+              >
+                <ArrowRight className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Center: Wheel with Team Name Inside */}
+            <div className="flex flex-col items-center justify-center relative">
               <svg
                 width={600}
                 height={600}
@@ -118,29 +152,40 @@ export default function TeamSelection() {
                 {teams.map((team, idx) => {
                   const path = slicePath(idx, totalTeams, 290, 200, 300, 300);
                   const imgPos = logoPosition(idx, totalTeams, 250, 64);
-              return (
+                  const isSelected = idx === selectedIndex;
+                  
+                  return (
                     <g
                       key={team.id}
                       onMouseEnter={() => setSelectedIndex(idx)}
+                      onClick={() => handleTeamSelect(team.id)}
                       className="cursor-pointer"
                     >
                       <path
                         d={path}
                         fill="rgba(255,255,255,0.12)"
                         stroke={
-                          idx === selectedIndex
-                            ? "rgb(28,151,185)"
+                          isSelected
+                            ? "rgb(207, 10, 10)"
                             : "rgba(0,0,0,0.4)"
                         }
-                        strokeWidth={idx === selectedIndex ? 6 : 3}
+                        strokeWidth={isSelected ? 6 : 3}
                       />
-                      <image
+                      <motion.image
                         href={team.logo}
                         xlinkHref={team.logo}
                         x={imgPos.x}
                         y={imgPos.y}
                         width={64}
                         height={64}
+                        animate={{
+                          scale: isSelected ? 0.9 : 0.7,
+                        }}
+                        transition={{ duration: 0.3 }}
+                        style={{ 
+                          pointerEvents: "none",
+                          transformOrigin: "center"
+                        }}
                       />
                     </g>
                   );
@@ -152,7 +197,7 @@ export default function TeamSelection() {
                     href={selectedTeam.logo}
                     xlinkHref={selectedTeam.logo}
                     x={240}
-                    y={240}
+                    y={200}
                     width={120}
                     height={120}
                     style={{ pointerEvents: "none" }}
@@ -163,39 +208,36 @@ export default function TeamSelection() {
                   />
                 )}
               </svg>
-      {/* Navigation arrows */}
-              <div className="flex items-center gap-6 mt-8">
-        <button
-          onClick={selectPrev}
-          aria-label="Previous Team"
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <button
-          onClick={selectNext}
-          aria-label="Next Team"
-          className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
-        >
-          <ArrowRight className="w-6 h-6" />
-        </button>
-      </div>
+
+              {/* Team Name Inside Circle */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10">
+                <motion.h1
+                  key={selectedTeam.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-2xl sm:text-3xl font-thin uppercase text-white drop-shadow-lg mt-30"
+                  style={{ letterSpacing: "-0.03em" }}
+                >
+                  {selectedTeam.name}
+                </motion.h1>
+              </div>
             </div>
 
-            {/* Right: Team name and Explore Player button */}
-            <div className="flex flex-col items-center md:items-start justify-center w-full md:w-1/2">
-              <motion.h1
-                key={selectedTeam.id}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 text-white drop-shadow-lg text-center md:text-left"
-                style={{ letterSpacing: "-0.03em" }}
+            {/* Bottom: Explore Player Button */}
+            <div className="mt-8">
+              <button 
+                onClick={handleExplorePlayer}
+                className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                style={{
+                  background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                  
+                  border: "1px solid rgba(207, 10, 10, 0.5)",
+                  boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                }}
               >
-                {selectedTeam.name}
-              </motion.h1>
-              <button className="mt-2 px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-lg font-semibold shadow-lg hover:scale-105 hover:from-cyan-400 hover:to-blue-500 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-400">
-                Explore Player
+                <span className="relative z-10">Explore Player</span>
+                <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
               </button>
             </div>
           </div>

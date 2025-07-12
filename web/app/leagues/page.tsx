@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Badge } from "../components/ui/badge"
 import { ArrowRight, Trophy, Globe, Users, TrendingUp, Lock } from "lucide-react"
 import Link from "next/link"
-import TopNav from "../components/ui/topnavbar"
+
 
 const leagues = [
   {
@@ -16,7 +16,7 @@ const leagues = [
     tier: "Top",
     accent: "from-blue-500 to-indigo-600",
     borderColor: "border-blue-500/50",
-    textColor: "text-blue-400",
+    textColor: "text-white",
     image: "https://www.lfp.fr/assets/LFP_REVEAL_WEB_LFP_DESKTOP_2016x1043_afe795e9ea.jpg",
     gradient: "from-blue-900/20 to-indigo-900/20",
     locked: false
@@ -112,7 +112,7 @@ export default function LeaguesPage() {
         {filteredLeagues.map((league, index) => (
           <div key={league.id} className={`relative ${league.locked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
             {league.locked && (
-              <Link href={`/map?league=${league.id}`}>
+              <Link href={`/team`}>
                 <div 
                   className="relative rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 group h-50 w-full mb-10 opacity-80 grayscale"
                   style={{
@@ -136,13 +136,13 @@ export default function LeaguesPage() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${league.accent} shadow-lg`} />
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${league.accent} text-white shadow-lg`} />
                           <h3 className={`text-3xl font-mono font-bold text-white tracking-wide transition-colors duration-300`}>
                             {league.name}
                           </h3>
                         </div>
                         <Badge
-                          className={`${league.borderColor} ${league.textColor} border bg-zinc-900/50 px-4 py-1 text-xs uppercase font-mono backdrop-blur-sm`}
+                          className={`${league.borderColor} text-white border bg-zinc-900/50 px-4 py-1 text-xs uppercase font-mono backdrop-blur-sm`}
                         >
                           {league.tier}
                         </Badge>
@@ -194,7 +194,7 @@ export default function LeaguesPage() {
             )}
 
             {!league.locked && (
-              <Link href={`/map?league=${league.id}`}>
+              <Link href={`/team`}>
                 <div 
                   className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-red-500/20 transition-all duration-500 group h-50  w-full transform hover:-translate-y-1 mb-10"
                   style={{
@@ -218,8 +218,8 @@ export default function LeaguesPage() {
                   <div className="relative h-full p-8 flex items-center justify-between">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${league.accent} shadow-lg`} />
+                        <div className="flex items-center space-x-3 text-white">
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${league.accent} text-white shadow-lg`} />
                           <h3 className={`text-3xl font-mono font-bold text-white tracking-wide group-hover:${league.textColor} transition-colors duration-300`}>
                             {league.name}
                           </h3>
