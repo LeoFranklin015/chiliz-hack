@@ -2,7 +2,7 @@
   "leagueId": 61,
   "season": 2024,
   "createdAt": "2025-07-12T15:38:31.639Z",
-  "lastUpdated": "2025-07-12T16:57:02.764Z",
+  "lastUpdated": "2025-07-12T16:59:22.855Z",
   "players": {
     "103": {
       "contractAddress": "0x51EC916511CaA6c6675A54B4dE156Abe706F41cd",
@@ -571,6 +571,15 @@
       "tokenName": "Romain Paul Jean-Michel Perraud (Ligue 1 2024)",
       "tokenSymbol": "RPER"
     },
+    "20651": {
+      "contractAddress": "0x0F4bB4Bb734348b3e1b148182FF12fFa136CF640",
+      "playerName": "Jean-Louis Leca",
+      "teamName": "Lens",
+      "position": "Goalkeeper",
+      "deployedAt": "2025-07-12T16:58:23.990Z",
+      "tokenName": "Jean-Louis Leca (Ligue 1 2024)",
+      "tokenSymbol": "JLEC"
+    },
     "20696": {
       "contractAddress": "0x60BF1B27c89f8bE9B1D216469f7C814584F08c14",
       "playerName": "Pape Alassane Gueye",
@@ -994,6 +1003,15 @@
       "tokenName": "Mikkel Desler Puggaard (Ligue 1 2024)",
       "tokenSymbol": "MPUG"
     },
+    "40594": {
+      "contractAddress": "0xD16Ed1bB723F7eC41CF39CC25FA08ff366eBA674",
+      "playerName": "Adam Buksa",
+      "teamName": "Lens",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T16:59:07.908Z",
+      "tokenName": "Adam Buksa (Ligue 1 2024)",
+      "tokenSymbol": "ABUK"
+    },
     "41300": {
       "contractAddress": "0x505d9b64efD343a94A7Fb7eB2288fd69ea89317C",
       "playerName": "Jubal Rocha Mendes Júnior",
@@ -1164,6 +1182,15 @@
       "deployedAt": "2025-07-12T16:46:47.059Z",
       "tokenName": "Jérémy Le Douaron (Ligue 1 2024)",
       "tokenSymbol": "JDOU"
+    },
+    "85914": {
+      "contractAddress": "0xD904582B5305CE2d974b5ce747FC8F905D35a7bA",
+      "playerName": "Julien Le Cardinal",
+      "teamName": "Lens",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T16:58:53.528Z",
+      "tokenName": "Julien Le Cardinal (Ligue 1 2024)",
+      "tokenSymbol": "JCAR"
     },
     "87381": {
       "contractAddress": "0xb2115c21C9864865D8F3ced0Aec261a61A67CbcD",
@@ -1624,6 +1651,15 @@
       "tokenName": "Joe-Loïc Paul Dona Affamah (Ligue 1 2024)",
       "tokenSymbol": "JAFF"
     },
+    "274278": {
+      "contractAddress": "0x065623c7F7D7438a4A7188d048bd472A9295FEDF",
+      "playerName": "Ibrahima Baldé",
+      "teamName": "Lens",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T16:58:38.811Z",
+      "tokenName": "Ibrahima Baldé (Ligue 1 2024)",
+      "tokenSymbol": "IBAL"
+    },
     "274312": {
       "contractAddress": "0x1358683005DcC357cC79C40353DCE22ba4228A27",
       "playerName": "Mohamed-Ali Cho",
@@ -1714,6 +1750,15 @@
       "tokenName": "Vítor Manuel Carvalho Oliveira (Ligue 1 2024)",
       "tokenSymbol": "VOLI"
     },
+    "282549": {
+      "contractAddress": "0x0857BDF1Ec6E2ACfb752b3987F7D0fD9B06ACcb7",
+      "playerName": "Junior Mwanga",
+      "teamName": "Le Havre",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T16:57:46.970Z",
+      "tokenName": "Junior Mwanga (Ligue 1 2024)",
+      "tokenSymbol": "JMWA"
+    },
     "283026": {
       "contractAddress": "0x4E7BcbE13dA22a631D839F1a267F4B12c39F99dD",
       "playerName": "Mika Miles Biereth",
@@ -1722,6 +1767,15 @@
       "deployedAt": "2025-07-12T16:22:41.352Z",
       "tokenName": "Mika Miles Biereth (Ligue 1 2024)",
       "tokenSymbol": "MBIE"
+    },
+    "284071": {
+      "contractAddress": "0x22435227113899332F4c6CA054D6915D9b947714",
+      "playerName": "Oussama Targhalline",
+      "teamName": "Le Havre",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T16:57:17.589Z",
+      "tokenName": "Oussama Targhalline (Ligue 1 2024)",
+      "tokenSymbol": "OTAR"
     },
     "284072": {
       "contractAddress": "0x6699bb27C2968075AD5B66aB1120b4340650b532",
@@ -1920,6 +1974,15 @@
       "deployedAt": "2025-07-12T15:40:59.079Z",
       "tokenName": "Enzo Caumont (Ligue 1 2024)",
       "tokenSymbol": "ECAU"
+    },
+    "329260": {
+      "contractAddress": "0x0bf64958eFBc597bBffC2D8FCf855026F8AD86Db",
+      "playerName": "Mamadou Camara",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T16:59:22.855Z",
+      "tokenName": "Mamadou Camara (Ligue 1 2024)",
+      "tokenSymbol": "MCAM"
     },
     "330234": {
       "contractAddress": "0x9c7365b63cdAC959782216264dFeBa4bC12419d9",
@@ -2353,6 +2416,15 @@
       "tokenName": "Malamine Efekele (Ligue 1 2024)",
       "tokenSymbol": "MEFE"
     },
+    "374503": {
+      "contractAddress": "0xA2CE5BaC1a175D12E122A45999e7F8CaC2E8dB79",
+      "playerName": "Yoni Gomis",
+      "teamName": "Le Havre",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T16:58:02.913Z",
+      "tokenName": "Yoni Gomis (Ligue 1 2024)",
+      "tokenSymbol": "YGOM"
+    },
     "375000": {
       "contractAddress": "0x712b2afD50aa19662bb034AdB4b5F53Eec5000c3",
       "playerName": "Ibrahim Salah",
@@ -2388,6 +2460,15 @@
       "deployedAt": "2025-07-12T16:16:53.124Z",
       "tokenName": "Ilyes Housni (Ligue 1 2024)",
       "tokenSymbol": "IHOU"
+    },
+    "386284": {
+      "contractAddress": "0x76B6Ae10E2723B7dfc02f2D0dBa3deb0Ae88975B",
+      "playerName": "Mahamadou Diawara",
+      "teamName": "Le Havre",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T16:57:32.669Z",
+      "tokenName": "Mahamadou Diawara (Ligue 1 2024)",
+      "tokenSymbol": "MDIA"
     },
     "386285": {
       "contractAddress": "0xdEEeA629bF6E6DD4118cbCfF19547cD0fAa79e53",

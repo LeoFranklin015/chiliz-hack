@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cron from 'node-cron';
-import { ethers } from "hardhat";
-import { PlayerToken as PlayerTokenType } from "./typechain-types/contracts/PlayerToken";
+import { ethers } from "ethers";
+import PlayerTokenABI from "./artifacts/contracts/PlayerToken.sol/PlayerToken.json";
 import { ApiFootballAdapter } from "./src/adapter/api-football-adapter";
 import * as fs from "fs";
 import dotenv from "dotenv";
@@ -32,6 +32,9 @@ const adapter = new ApiFootballAdapter({
   apiKey: config.apiFootballKey
 });
 
+// Initialize ethers provider
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "https://spicy-rpc.chiliz.com");
+
 // MongoDB Data API helper functions
 async function makeMongoDBRequest(action: string, data?: any) {
   const url = `${MONGODB_ENDPOINT}/action/${action}`;
@@ -44,6 +47,10 @@ async function makeMongoDBRequest(action: string, data?: any) {
   };
 
   try {
+    console.log(`🔍 MongoDB API Request: ${action}`);
+    console.log(`🔍 Request URL: ${url}`);
+    console.log(`🔍 Request Body:`, JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -54,10 +61,15 @@ async function makeMongoDBRequest(action: string, data?: any) {
     });
 
     if (!response.ok) {
-      throw new Error(`MongoDB API request failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`❌ MongoDB API Error Response: ${response.status} ${response.statusText}`);
+      console.error(`❌ Error Details:`, errorText);
+      throw new Error(`MongoDB API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log(`✅ MongoDB API Response:`, JSON.stringify(result, null, 2));
+    return result;
   } catch (error) {
     console.error('❌ MongoDB Data API request failed:', error);
     throw error;
@@ -76,108 +88,130 @@ async function connectToMongoDB() {
   }
 }
 
-interface RegistryPlayer {
-  contractAddress: string;
-  playerName: string;
-  teamName: string;
-  position: string;
-  deployedAt: string;
-  tokenName: string;
-  tokenSymbol: string;
-}
 
-interface Registry {
-  leagueId: number;
-  season: number;
-  createdAt: string;
-  lastUpdated: string;
-  players: Record<number, RegistryPlayer>;
-}
 
 /**
- * Load player registry from file
- */
-function loadPlayerRegistry(): Registry | null {
-  const registryFile = `player-registry-${config.leagueId}-${config.season}.json`;
-  
-  if (fs.existsSync(registryFile)) {
-    try {
-      const registry = JSON.parse(fs.readFileSync(registryFile, 'utf8')) as Registry;
-      console.log(`📖 Loaded registry with ${Object.keys(registry.players).length} players`);
-      return registry;
-    } catch (error) {
-      console.error('❌ Failed to load registry:', error);
-      return null;
-    }
-  }
-  
-  console.log('⚠️  No registry file found');
-  return null;
-}
-
-/**
- * Update player stats for all players in registry
+ * Update player stats for all players from API Football
  */
 async function updateAllPlayerStats(): Promise<void> {
   console.log('\n🔄 Starting scheduled player stats update...');
   
-  const registry = loadPlayerRegistry();
-  if (!registry) {
-    console.log('❌ No registry available for updates');
-    return;
-  }
+  try {
+    // Step 1: Fetch all teams from API Football
+    console.log('📋 Fetching all teams from API Football...');
+    const apiTeams = await adapter.fetchTeams(config.leagueId, config.season);
+    console.log(`✅ Found ${apiTeams.length} teams`);
 
-  const playerIds = Object.keys(registry.players);
-  console.log(`📊 Found ${playerIds.length} players to update`);
+    let totalPlayers = 0;
+    let successCount = 0;
+    let errorCount = 0;
 
-  let successCount = 0;
-  let errorCount = 0;
+    // Step 2: Process each team
+    for (let teamIndex = 0; teamIndex < apiTeams.length; teamIndex++) {
+      const team = apiTeams[teamIndex];
+      console.log(`\n🏆 Processing Team ${teamIndex + 1}/${apiTeams.length}: ${team.team.name}`);
 
-  for (const playerIdStr of playerIds) {
-    const playerId = parseInt(playerIdStr);
-    const playerData = registry.players[playerId];
-    
-    try {
-      console.log(`\n🔄 Updating stats for ${playerData.playerName} (${playerData.contractAddress})`);
-      
-      // Get contract instance
-      const playerToken = await ethers.getContractAt("PlayerToken", playerData.contractAddress) as PlayerTokenType;
-      
-      // Create player object for the update function
-      const player = {
-        player: playerId,
-        firstname: playerData.playerName.split(' ')[0] || '',
-        lastname: playerData.playerName.split(' ').slice(1).join(' ') || '',
-        teamname: playerData.teamName,
-        position: playerData.position,
-        nationality: '',
-        age: 0,
-        teamId: 0,
-        teamName: playerData.teamName,
-        teamCode: '',
-        teamCountry: ''
-      };
+      try {
+        // Fetch players for this team
+        console.log(`   📥 Fetching players for ${team.team.name}...`);
+        const apiPlayers = await adapter.fetchTeamPlayers(team.team.id, config.leagueId, config.season);
+        
+        console.log(`   ✅ Found ${apiPlayers.length} players in ${team.team.name}`);
+        totalPlayers += apiPlayers.length;
 
-      // Update player stats only (skip initialization and minting)
-      await updatePlayerStatsOnly(playerToken, player, config.leagueId, config.season, adapter);
-      
-      successCount++;
-      console.log(`✅ Successfully updated ${playerData.playerName}`);
-      
-      // Add delay between updates to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-    } catch (error) {
-      errorCount++;
-      console.error(`❌ Failed to update ${playerData.playerName}:`, error);
+        // Process each player
+        for (let playerIndex = 0; playerIndex < apiPlayers.length; playerIndex++) {
+          const apiPlayer = apiPlayers[playerIndex];
+          const playerId = apiPlayer.player.id;
+          const fullName = `${apiPlayer.player.firstname} ${apiPlayer.player.lastname}`;
+          
+          try {
+            console.log(`   🔄 Processing player ${playerIndex + 1}/${apiPlayers.length}: ${fullName}`);
+            
+            // Get player stats from API Football
+            const apiPlayerStats = await adapter.fetchPlayerStats(playerId, config.leagueId, config.season);
+            
+            if (apiPlayerStats && apiPlayerStats.statistics.length > 0) {
+              const playerStats = apiPlayerStats.statistics[0];
+              const newStats = {
+                goals: playerStats.goals.total || 0,
+                assists: playerStats.goals.assists || 0,
+                penalties_scored: playerStats.penalty.scored || 0,
+                shots_total: playerStats.shots.total || 0,
+                shots_on_target: playerStats.shots.on || 0,
+                duels_total: playerStats.duels.total || 0,
+                duels_won: playerStats.duels.won || 0,
+                tackles_total: playerStats.tackles.total || 0,
+                appearances: playerStats.games.appearences || 0,
+                yellow_cards: playerStats.cards.yellow || 0,
+                red_cards: playerStats.cards.red || 0,
+                lastUpdated: Math.floor(Date.now() / 1000),
+              };
+
+              // Always store stats in MongoDB first
+              await storeStats(playerId, newStats);
+              
+              // Get stored stats to compare
+              const storedStats = await getStoredStats(playerId);
+              
+              // Only update blockchain if stats have changed
+              if (!storedStats || !areStatsEqual(storedStats, newStats)) {
+                console.log(`   📊 Stats changed for ${fullName}, updating blockchain...`);
+                
+                // Try to find contract address from MongoDB registry
+                const contractResult = await makeMongoDBRequest('findOne', {
+                  filter: { playerId: playerId.toString(), eventType: 'initialized' }
+                });
+                
+                if (contractResult.document && contractResult.document.contractAddress) {
+                  // Get contract instance
+                  const playerToken = new ethers.Contract(contractResult.document.contractAddress, PlayerTokenABI.abi, provider);
+                  
+                  // Update player stats on blockchain
+                  const statsTx = await playerToken.updatePlayerStats(newStats, { gasLimit: 1000000 });
+                  await statsTx.wait();
+                  console.log(`   ✅ Updated ${fullName} on blockchain`);
+                  successCount++;
+                } else {
+                  console.log(`   ⚠️  No contract found for ${fullName}, stats stored in MongoDB only`);
+                }
+              } else {
+                console.log(`   ⏭️  Stats unchanged for ${fullName}, skipping blockchain update`);
+              }
+            } else {
+              console.log(`   ⚠️  No stats available for ${fullName}`);
+            }
+            
+            // Add delay between players to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+          } catch (error) {
+            errorCount++;
+            console.error(`   ❌ Failed to process ${fullName}:`, error);
+          }
+        }
+
+        // Add delay between teams to respect rate limits
+        if (teamIndex < apiTeams.length - 1) {
+          console.log(`   ⏳ Waiting 3 seconds before next team...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+
+      } catch (error) {
+        console.error(`   ❌ Failed to process team ${team.team.name}:`, error);
+      }
     }
-  }
 
-  console.log(`\n📊 Update Summary:`);
-  console.log(`- Total players: ${playerIds.length}`);
-  console.log(`- Successful updates: ${successCount}`);
-  console.log(`- Failed updates: ${errorCount}`);
-  console.log(`- Update completed at: ${new Date().toISOString()}`);
+    console.log(`\n📊 Update Summary:`);
+    console.log(`- Total teams: ${apiTeams.length}`);
+    console.log(`- Total players: ${totalPlayers}`);
+    console.log(`- Successful updates: ${successCount}`);
+    console.log(`- Failed updates: ${errorCount}`);
+    console.log(`- Update completed at: ${new Date().toISOString()}`);
+
+  } catch (error) {
+    console.error('❌ Failed to fetch teams from API Football:', error);
+  }
 }
 
 /**
@@ -185,8 +219,9 @@ async function updateAllPlayerStats(): Promise<void> {
  */
 async function getStoredStats(playerId: number): Promise<any> {
   try {
+    const playerIdStr = playerId.toString();
     const result = await makeMongoDBRequest('findOne', {
-      filter: { playerId }
+      filter: { playerId: playerIdStr }
     });
     return result.document;
   } catch (error) {
@@ -200,19 +235,32 @@ async function getStoredStats(playerId: number): Promise<any> {
  */
 async function storeStats(playerId: number, stats: any): Promise<void> {
   try {
+    // Ensure playerId is a string for MongoDB compatibility
+    const playerIdStr = playerId.toString();
+    
+    // Clean up the stats object to ensure all values are proper types
+    const cleanStats = {
+      ...stats,
+      playerId: playerIdStr,
+      updatedAt: new Date().toISOString(),
+      lastApiFetch: new Date().toISOString()
+    };
+    
+    // Remove any undefined or null values
+    Object.keys(cleanStats).forEach(key => {
+      if (cleanStats[key] === undefined || cleanStats[key] === null) {
+        delete cleanStats[key];
+      }
+    });
+    
     await makeMongoDBRequest('updateOne', {
-      filter: { playerId },
+      filter: { playerId: playerIdStr },
       update: {
-        $set: { 
-          ...stats, 
-          playerId,
-          updatedAt: new Date(),
-          lastApiFetch: new Date()
-        }
+        $set: cleanStats
       },
       upsert: true
     });
-    console.log(`       💾 Stats stored in MongoDB Data API for player ${playerId}`);
+    console.log(`       💾 Stats stored in MongoDB Data API for player ${playerIdStr}`);
   } catch (error) {
     console.error('❌ Failed to store stats in MongoDB Data API:', error);
   }
@@ -237,7 +285,7 @@ function areStatsEqual(stats1: any, stats2: any): boolean {
  * Update only player stats (without initialization and minting)
  */
 async function updatePlayerStatsOnly(
-  playerToken: PlayerTokenType,
+  playerToken: ethers.Contract,
   player: any,
   leagueId: number,
   season: number,
@@ -321,7 +369,7 @@ cron.schedule('0 2 * * *', async () => {
   timezone: "UTC"
 });
 
-app.post('/api/update-stats', async (req: Request, res: Response) => {
+app.get('/api/update-stats', async (req: Request, res: Response) => {
   try {
     console.log('🔄 Manual stats update triggered via API');
     await updateAllPlayerStats();
@@ -348,17 +396,31 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/status', (req: Request, res: Response) => {
-  const registry = loadPlayerRegistry();
-  res.json({
-    registryLoaded: !!registry,
-    playerCount: registry ? Object.keys(registry.players).length : 0,
-    lastUpdate: registry?.lastUpdated,
-    config: {
-      leagueId: config.leagueId,
-      season: config.season
-    }
-  });
+app.get('/api/status', async (req: Request, res: Response) => {
+  try {
+    // Get stats from MongoDB
+    const countResult = await makeMongoDBRequest('countDocuments', {
+      filter: {}
+    });
+    
+    const lastUpdatedResult = await makeMongoDBRequest('findOne', {
+      filter: {},
+      sort: { updatedAt: -1 }
+    });
+    
+    res.json({
+      status: 'active',
+      totalPlayers: countResult.count,
+      lastUpdate: lastUpdatedResult.document?.updatedAt,
+      config: {
+        leagueId: config.leagueId,
+        season: config.season
+      },
+      nextUpdate: 'Daily at 2:00 AM UTC'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get status' });
+  }
 });
 
 // Database stats endpoint
