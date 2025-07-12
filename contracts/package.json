@@ -4,8 +4,11 @@
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy.ts --network spicy",
     "deploy-all": "npx hardhat run scripts/deploy-all.ts --network spicy",
+    "deploy-team-tokens": "npx hardhat run scripts/deploy-team-tokens.ts --network spicy",
+    "mint-team-tokens": "npx hardhat run scripts/mint-team-tokens.ts --network spicy",
     "test-api": "npx hardhat run scripts/test-api.ts",
-    "debug-api": "npx hardhat run scripts/debug-api.ts"
+    "debug-api": "npx hardhat run scripts/debug-api.ts",
+    "deploy-team-tokens": "npx hardhat run scripts/deploy-team-tokens.ts --network spicy"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.0.0",

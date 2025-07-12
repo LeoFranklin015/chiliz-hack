@@ -114,10 +114,34 @@ const LEAGUE_NAMES: Record<number, string> = {
   135: 'Serie A',
 };
 
+// Team ID to token symbol mapping for Ligue 1
+const TEAM_TOKEN_MAPPING: Record<number, string> = {
+    77: 'ANG',   // Angers
+    79: 'LIL',   // Lille
+    80: 'LYO',   // Lyon
+    81: 'MAR',   // Marseille
+    82: 'MON',   // Montpellier
+    83: 'NAN',   // Nantes
+    84: 'NIC',   // Nice
+    85: 'PAR',   // Paris Saint-Germain
+    91: 'MON',   // Monaco (⚠️ Symbol conflict with Montpellier)
+    93: 'REI',   // Reims
+    94: 'REN',   // Rennes
+    95: 'STR',   // Strasbourg
+    96: 'TOU',   // Toulouse
+    106: 'BRE',  // Stade Brestois 29
+    108: 'AUX',  // Auxerre
+    111: 'HAV',  // Le Havre
+    112: 'MET',  // Metz
+    116: 'LEN',  // Lens
+    1063: 'ETI'  // Saint Etienne
+  };
+  
+
 async function main() {
   const config: Config = {
-    leagueId: 74, // Ligue 1 - confirmed working
-    season: 2025, // Current season - confirmed working
+    leagueId: 61, // Ligue 1 - confirmed working
+    season: 2024, // Current season - confirmed working
     initialSupply: '1000000',
     apiFootballKey: process.env.API_FOOTBALL_KEY || ''
   };
@@ -143,6 +167,15 @@ async function main() {
   });
 
   const leagueName = LEAGUE_NAMES[config.leagueId] || `League ${config.leagueId}`;
+
+  // Load team token addresses
+  let teamTokenAddresses: Record<string, string> = {};
+  try {
+    teamTokenAddresses = JSON.parse(fs.readFileSync('teamFanTokenAddress.json', 'utf8'));
+    console.log(`📋 Loaded ${Object.keys(teamTokenAddresses).length} team token addresses`);
+  } catch (error) {
+    console.warn('⚠️  Could not load teamFanTokenAddress.json, will use default payment token');
+  }
 
   try {
     // Step 1: Fetch all teams
@@ -217,7 +250,8 @@ async function main() {
           totalPlayersProcessed,
           registry,
           registryFile,
-          adapter
+          adapter,
+          teamTokenAddresses
         );
 
         allDeployedTokens.push(...teamDeployedTokens);
@@ -335,7 +369,8 @@ async function deployTokensForTeam(
   totalPlayersProcessed: number, 
   registry: Registry, 
   registryFile: string,
-  adapter: ApiFootballAdapter
+  adapter: ApiFootballAdapter,
+  teamTokenAddresses: Record<string, string>
 ): Promise<DeploymentInfo[]> {
   const PlayerToken = await ethers.getContractFactory("PlayerToken");
   const deployedTokens: DeploymentInfo[] = [];
@@ -360,26 +395,71 @@ async function deployTokensForTeam(
       console.log(`       Symbol: ${tokenSymbol}`);
       console.log(`       Player ID: ${player.player}`);
 
-      // Deploy player token contract with minimal constructor
-      const playerToken = (await PlayerToken.deploy(
-        tokenName,
-        tokenSymbol
-      )) as unknown as PlayerTokenType;
+      // Get team token address for payment
+      const teamTokenSymbol = TEAM_TOKEN_MAPPING[player.teamId];
+      const teamTokenAddress = teamTokenSymbol ? teamTokenAddresses[teamTokenSymbol] : null;
       
-      await playerToken.waitForDeployment();
-      const tokenAddress = await playerToken.getAddress();
+      if (!teamTokenAddress) {
+        console.log(`       ⚠️  No team token found for team ${player.teamId}, skipping deployment`);
+        continue;
+      }
+      
+      console.log(`       💰 Using team token: ${teamTokenSymbol} (${teamTokenAddress})`);
+      
+      // Deploy player token contract with explicit gas limit
+      console.log(`       ⛽ Deploying with explicit gas limit...`);
+      
+      let playerToken: PlayerTokenType;
+      let tokenAddress: string;
+      
+      try {
+        playerToken = await PlayerToken.deploy(
+          tokenName,
+          tokenSymbol,
+          teamTokenAddress,
+          { gasLimit: 5000000 } // 5M gas limit
+        );
+        
+        console.log(`       📦 Deployment transaction sent: ${playerToken.deploymentTransaction()?.hash}`);
+        await playerToken.waitForDeployment();
+        tokenAddress = await playerToken.getAddress();
+        
+        console.log(`       ✅ Contract deployed to: ${tokenAddress}`);
+      } catch (deployError) {
+        console.error(`       ❌ Deployment failed:`, deployError);
+        throw deployError;
+      }
 
       // Initialize the contract with player data
-      const initializeTx = await playerToken.initialize(
-        player.player,
-        fullName,
-        player.teamname,
-        player.position,
-        leagueName,
-        config.season.toString(),
-        config.initialSupply
-      );
-      await initializeTx.wait();
+      console.log(`       🔧 Initializing contract with player data...`);
+      try {
+        const initializeTx = await playerToken.initialize(
+          player.player,
+          fullName,
+          player.teamname,
+          player.position,
+          leagueName,
+          config.season.toString(),
+          config.initialSupply,
+          { gasLimit: 2000000 } // 2M gas for initialization
+        );
+        await initializeTx.wait();
+        console.log(`       ✅ Contract initialized successfully`);
+      } catch (initError) {
+        console.error(`       ❌ Initialization failed:`, initError);
+        throw initError;
+      }
+
+      // Mint tokens to the contract itself
+      console.log(`       🪙 Minting tokens to contract...`);
+      try {
+        const mintTx = await playerToken.mint(tokenAddress, config.initialSupply, { gasLimit: 1000000 }); // 1M gas for minting
+        await mintTx.wait();
+        console.log(`       ✅ Tokens minted to contract successfully`);
+      } catch (mintError) {
+        console.error(`       ❌ Minting failed:`, mintError);
+        throw mintError;
+      }
 
       // Fetch real player stats from API Football
       console.log(`       📊 Fetching real stats for ${fullName}...`);
@@ -416,8 +496,15 @@ async function deployTokensForTeam(
         console.log(`       ⚠️  Using mock stats (API call failed)`);
       }
       
-      const statsTx = await playerToken.updatePlayerStats(stats);
-      await statsTx.wait();
+      console.log(`       📊 Updating player stats...`);
+      try {
+        const statsTx = await playerToken.updatePlayerStats(stats, { gasLimit: 1000000 }); // 1M gas for stats update
+        await statsTx.wait();
+        console.log(`       ✅ Player stats updated successfully`);
+      } catch (statsError) {
+        console.error(`       ❌ Stats update failed:`, statsError);
+        throw statsError;
+      }
 
       // Store deployment info
       const deploymentInfo: DeploymentInfo = {
