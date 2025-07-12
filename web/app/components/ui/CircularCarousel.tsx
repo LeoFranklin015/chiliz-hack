@@ -3,11 +3,14 @@
 import React, { useState, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-interface CircularCarouselProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CircularCarouselProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   items: ReactNode[];
   itemWidth?: number;
   itemHeight?: number;
   className?: string;
+  currentIndex?: number;
+  onChange?: (idx: number) => void;
 }
 
 const CircularCarousel = React.forwardRef<
@@ -15,14 +18,25 @@ const CircularCarousel = React.forwardRef<
   CircularCarouselProps
 >(
   (
-    { items = [], itemWidth = 320, itemHeight = 420, className, ...props },
+    {
+      items = [],
+      itemWidth = 320,
+      itemHeight = 420,
+      className,
+      currentIndex,
+      onChange,
+      ...props
+    },
     ref
   ) => {
-    const [current, setCurrent] = useState(0);
     const count = items.length;
+    const [internalIndex, setInternalIndex] = useState(0);
+    const current = currentIndex !== undefined ? currentIndex : internalIndex;
 
     const goTo = (idx: number) => {
-      setCurrent((idx + count) % count);
+      const newIndex = (idx + count) % count;
+      if (onChange) onChange(newIndex);
+      else setInternalIndex(newIndex);
     };
 
     const handlePrev = () => goTo(current - 1);

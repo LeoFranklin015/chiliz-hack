@@ -41,11 +41,19 @@ interface ApiPlayer {
 }
 
 export default function PlayerPage() {
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerCard | null>(null);
   const [players, setPlayers] = useState<PlayerCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detailedPlayerData, setDetailedPlayerData] = useState<any>(null);
+
+  // Keep selectedPlayer in sync with currentIndex
+  useEffect(() => {
+    if (players.length > 0) {
+      setSelectedPlayer(players[currentIndex]);
+    }
+  }, [currentIndex, players]);
 
   // Fetch team players
   useEffect(() => {
@@ -190,12 +198,11 @@ export default function PlayerPage() {
         {players.length > 0 ? (
           <CircularCarousel
             itemWidth={320}
-            items={players.map((player) => (
+            items={players.map((player, idx) => (
               <div
                 key={player.id}
-                onClick={() => setSelectedPlayer(player)}
-                className={`cursor-pointer transition-all duration-200 ${
-                  selectedPlayer?.id === player.id
+                className={`transition-all duration-200 ${
+                  idx === currentIndex
                     ? "scale-105 ring-2 ring-lime-400"
                     : "hover:scale-102"
                 }`}
@@ -207,6 +214,8 @@ export default function PlayerPage() {
                 />
               </div>
             ))}
+            currentIndex={currentIndex}
+            onChange={setCurrentIndex}
           />
         ) : (
           <div className="text-center text-zinc-400">
