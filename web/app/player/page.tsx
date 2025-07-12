@@ -260,57 +260,136 @@ export default function PlayerPage() {
             
             {/* Buy Modal */}
             {showBuyModal && selectedPlayer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-                <div className="bg-zinc-900 border border-red-500/50 rounded-xl p-8 w-full max-w-md relative">
-                  <button
-                    className="absolute top-4 right-4 text-zinc-400 hover:text-white text-2xl"
-                    onClick={() => setShowBuyModal(false)}
-                    aria-label="Close"
-                  >
-                    &times;
-                  </button>
-                  <h3 className="text-2xl font-bold mb-4 text-red-400">
-                    Buy Fan Token
-                  </h3>
-                  <div className="mb-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-zinc-300">Player:</span>
-                      <span className="text-white font-semibold">{selectedPlayer.name}</span>
-                    </div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-zinc-300">Availability:</span>
-                      <span className="text-white font-semibold">1000</span>
-                    </div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-zinc-300">Price:</span>
-                      <span className="text-red-400 font-semibold">$2.50</span>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="bg-zinc-900/95 border border-red-500/30 rounded-2xl w-full max-w-md relative shadow-2xl">
+                  {/* Modal Header */}
+                  <div className="bg-zinc-800/50 border-b border-zinc-700 p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-[#cf0a0a] gaming-text">
+                            Buy Fan Token
+                          </h3>
+                          <p className="text-zinc-400 text-sm mt-1">
+                            Purchase tokens for {selectedPlayer.name}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        className="text-zinc-400 hover:text-white text-2xl transition-colors duration-200"
+                        onClick={() => setShowBuyModal(false)}
+                        aria-label="Close"
+                      >
+                        &times;
+                      </button>
                     </div>
                   </div>
-                  <div className="mb-6">
-                    <label
-                      className="block text-zinc-300 mb-2"
-                      htmlFor="buy-amount"
-                    >
-                      Number of Tokens
-                    </label>
-                    <input
-                      id="buy-amount"
-                      type="number"
-                      min={1}
-                      value={buyAmount}
-                      onChange={(e) => setBuyAmount(Number(e.target.value))}
-                      className="w-full px-4 py-2 rounded-lg border border-zinc-600 bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-red-400"
-                    />
+
+                  {/* Modal Content */}
+                  <div className="p-6">
+                    <div className="space-y-6">
+                      {/* Player Info */}
+                      <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-700/50">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-8 h-8 bg-[linear-gradient(90deg,rgba(207,10,10,0.6)_0%,rgba(207,10,10,0.8)_100%)] rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <span className="text-zinc-200 font-semibold">Player Details</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm">Player:</span>
+                            <span className="text-white font-medium">{selectedPlayer.name}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm">Position:</span>
+                            <span className="text-zinc-300 font-medium">{selectedPlayer.title}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm">Availability:</span>
+                            <span className="text-white font-medium">1,000 tokens</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price Info */}
+                      <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-700/50">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-8 h-8 bg-[linear-gradient(90deg,rgba(207,10,10,0.6)_0%,rgba(207,10,10,0.8)_100%)] rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                          </div>
+                          <span className="text-zinc-200 font-semibold">Pricing</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm">Token Price:</span>
+                            <span className="text-[#cf0a0a] font-bold text-lg">$2.50</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm">Total Value:</span>
+                            <span className="text-white font-medium">${(buyAmount * 2.50).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quantity Input */}
+                      <div className="space-y-3">
+                        <label
+                          className="block text-zinc-200 font-semibold flex items-center space-x-2"
+                          htmlFor="buy-amount"
+                        >
+                          <svg className="w-4 h-4 text-[#cf0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                          </svg>
+                          <span>Number of Tokens</span>
+                        </label>
+                        <input
+                          id="buy-amount"
+                          type="number"
+                          min={1}
+                          max={1000}
+                          value={buyAmount}
+                          onChange={(e) => setBuyAmount(Number(e.target.value))}
+                          className="w-full px-4 py-3 rounded-xl border border-zinc-600 bg-zinc-800/50 text-white placeholder-zinc-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400 transition-all duration-200"
+                          placeholder="Enter quantity..."
+                        />
+                        <div className="flex justify-between text-xs text-zinc-500">
+                          <span>Min: 1</span>
+                          <span>Max: 1,000</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-all duration-200 text-lg"
-                    onClick={() => {
-                      /* handle buy logic here */
-                      setShowBuyModal(false);
-                    }}
-                  >
-                    Buy Fan Token
-                  </button>
+
+                  {/* Modal Footer */}
+                  <div className="bg-zinc-800/30 border-t border-zinc-700 p-6">
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setShowBuyModal(false)}
+                        className="flex-1 bg-transparent border border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white py-3 rounded-xl transition-all duration-200 font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          /* handle buy logic here */
+                          setShowBuyModal(false);
+                        }}
+                        className="flex-1 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300 py-3 rounded-xl border border-red-500/30"
+                      >
+                        Buy Tokens
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
