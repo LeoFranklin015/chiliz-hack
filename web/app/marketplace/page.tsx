@@ -23,7 +23,9 @@ import {
   Users,
   Upload,
   Tag,
+  Loader2,
 } from "lucide-react";
+import { usePinataUpload } from "../test/usePinataUpload";
 
 // Merchandise type
 type Merchandise = {
@@ -34,12 +36,24 @@ type Merchandise = {
   category: string;
   player: string;
   image: string;
-  tokenAmount: string,
+  stock: string,
 };
 
 const MarketplacePage = () => {
   const [merchandise, setMerchandise] = useState<Merchandise[]>([]);
   const [viewMode, setViewMode] = useState<"user" | "player">("user");
+
+  // Initialize Pinata upload hook
+  const {
+    selectedFile,
+    uploadedCID,
+    isUploading,
+    error: uploadError,
+    fileValidation,
+    uploadToPinata,
+    handleFileSelect,
+    getGatewayUrl,
+  } = usePinataUpload();
 
   const form = useForm({
     defaultValues: {
@@ -47,7 +61,7 @@ const MarketplacePage = () => {
       description: "",
       price: "",
       category: "",
-      tokenAmount: "",
+      stock: "",
       image: "",
     },
   });
@@ -56,31 +70,43 @@ const MarketplacePage = () => {
   const sampleMerchandise: Merchandise[] = [
     {
       id: "1",
-      name: "Messi Player Tokens",
-      description: "Official Barcelona player tokens for Lionel Messi",
+      name: "Messi Signature Jersey",
+      description: "Official Barcelona home jersey signed by Lionel Messi",
       price: "299.99",
-      category: "player_tokens",
+      category: "jerseys",
       player: "Lionel Messi",
       image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
-      tokenAmount: "1000",
+      stock: "10",
     },
     {
       id: "2",
-      name: "Ronaldo Player Tokens",
-      description: "Limited edition player tokens from Cristiano Ronaldo",
+      name: "Ronaldo Training Kit",
+      description: "Limited edition training kit from Cristiano Ronaldo's collection",
       price: "199.99",
-      category: "player_tokens",
+      category: "training",
       player: "Cristiano Ronaldo",
       image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop",
-      tokenAmount: "500",
+      stock: "5",
     },
   ];
 
   const categories = [
-    { id: "player_tokens", name: "Player Tokens" },
+    { id: "jerseys", name: "Jerseys" },
+    { id: "training", name: "Training Gear" },
+    { id: "footwear", name: "Footwear" },
+    { id: "accessories", name: "Accessories" },
   ];
 
-  function onSubmit(data: any) {
+  async function onSubmit(data: any) {
+    // If a file is selected, upload it first
+    let imageUrl = data.image;
+    if (selectedFile) {
+      await uploadToPinata();
+      if (uploadedCID) {
+        imageUrl = getGatewayUrl(uploadedCID);
+      }
+    }
+
     const newMerchandise: Merchandise = {
       id: Date.now().toString(),
       name: data.name,
@@ -88,8 +114,8 @@ const MarketplacePage = () => {
       price: data.price,
       category: data.category,
       player: "Your Name", // This would be the logged-in player's name
-      image: data.image || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
-      tokenAmount: data.tokenAmount,
+      image: imageUrl,
+      stock: data.stock,
     };
     setMerchandise((prev) => [...prev, newMerchandise]);
     form.reset();
@@ -116,16 +142,17 @@ const MarketplacePage = () => {
           <div className="inline-flex items-center space-x-3 bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/50 rounded-full px-8 py-4 mb-8 shadow-2xl">
             <ShoppingBag className="w-6 h-6 text-[#cf0a0a]" />
             <span className="text-white font-mono font-bold tracking-wider uppercase text-lg">
-              PLAYER TOKEN MARKETPLACE
+              PLAYER MERCHANDISE
             </span>
           </div>
 
           <h1 className="text-6xl md:text-7xl font-black text-white mb-6 gaming-text">
-            Player <span className="text-white">Tokens</span>
+            Official <span className="text-white">Fan Store</span>
           </h1>
 
           <p className="text-xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-medium">
-            Buy and sell player tokens to support your favorite players and earn rewards.
+            Exclusive merchandise from your favorite players. From signed jerseys to limited edition gear, 
+            find authentic items to show your support.
           </p>
         </motion.div>
 
@@ -145,7 +172,7 @@ const MarketplacePage = () => {
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
               }`}
             >
-              Browse
+              Shop
             </button>
             <button
               onClick={() => setViewMode("player")}
@@ -155,7 +182,7 @@ const MarketplacePage = () => {
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
               }`}
             >
-              Create
+              Sell
             </button>
           </div>
         </motion.div>
@@ -175,10 +202,10 @@ const MarketplacePage = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-[#cf0a0a] gaming-text">
-                    Create Token Listing
+                    List Merchandise
                   </h2>
                   <p className="text-zinc-400 text-sm mt-1">
-                    List your player tokens for sale
+                    Add your merchandise to the store
                   </p>
                 </div>
               </div>
@@ -192,11 +219,11 @@ const MarketplacePage = () => {
                       <FormItem>
                         <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
                           <Tag className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>Token Name</span>
+                          <span>Product Name</span>
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g. Player Name Tokens"
+                            placeholder="e.g. Signed Match Jersey"
                             className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
                             {...field}
                           />
@@ -216,7 +243,7 @@ const MarketplacePage = () => {
                         </FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Describe your token listing..."
+                            placeholder="Describe your product..."
                             className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm resize-none"
                             rows={3}
                             {...field}
@@ -235,14 +262,14 @@ const MarketplacePage = () => {
                         <FormItem>
                           <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
                             <DollarSign className="w-4 h-4 text-[#cf0a0a]" />
-                            <span>Price per Token</span>
+                            <span>Price</span>
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               min={0}
                               step="any"
-                              placeholder="e.g. 0.01"
+                              placeholder="e.g. 299.99"
                               className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
                               {...field}
                             />
@@ -254,18 +281,18 @@ const MarketplacePage = () => {
 
                     <FormField
                       control={form.control}
-                      name="tokenAmount"
+                      name="stock"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
                             <Users className="w-4 h-4 text-[#cf0a0a]" />
-                            <span>Token Amount</span>
+                            <span>Stock</span>
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               min={1}
-                              placeholder="e.g. 1000"
+                              placeholder="e.g. 10"
                               className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
                               {...field}
                             />
@@ -278,19 +305,87 @@ const MarketplacePage = () => {
 
                   <FormField
                     control={form.control}
-                    name="image"
+                    name="category"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                          <Upload className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>Player Image URL</span>
+                          <Tag className="w-4 h-4 text-[#cf0a0a]" />
+                          <span>Category</span>
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
+                          <select
                             {...field}
-                          />
+                            className="w-full bg-zinc-800/50 border-zinc-600 text-white rounded-xl backdrop-blur-sm px-4 py-3"
+                          >
+                            <option value="">Select Category</option>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Image Upload */}
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
+                          <Upload className="w-4 h-4 text-[#cf0a0a]" />
+                          <span>Product Image</span>
+                        </FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            <div className="flex flex-col items-center justify-center w-full">
+                              <label 
+                                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-700/50 transition-all duration-300"
+                              >
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Upload className="w-8 h-8 text-zinc-400 mb-2" />
+                                  <p className="mb-2 text-sm text-zinc-400">
+                                    <span className="font-bold">Click to upload</span> or drag and drop
+                                  </p>
+                                  <p className="text-xs text-zinc-500">
+                                    PNG, JPG, GIF or WebP (MAX. 10MB)
+                                  </p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      handleFileSelect(e.target.files[0]);
+                                    }
+                                  }}
+                                  disabled={isUploading}
+                                  accept="image/*"
+                                  {...field}
+                                />
+                              </label>
+                            </div>
+                            {fileValidation.message && (
+                              <p className="text-orange-500 text-sm">{fileValidation.message}</p>
+                            )}
+                            {uploadError && (
+                              <p className="text-red-500 text-sm">{uploadError}</p>
+                            )}
+                            {selectedFile && (
+                              <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                                <p className="text-zinc-400 text-sm truncate">
+                                  Selected: {selectedFile.name}
+                                </p>
+                                {isUploading && (
+                                  <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -299,9 +394,17 @@ const MarketplacePage = () => {
 
                   <Button
                     type="submit"
+                    disabled={isUploading}
                     className="w-full bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
                   >
-                    Create Listing
+                    {isUploading ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Uploading...</span>
+                      </div>
+                    ) : (
+                      "Create Listing"
+                    )}
                   </Button>
                 </form>
               </Form>
@@ -309,7 +412,7 @@ const MarketplacePage = () => {
           </motion.div>
         )}
 
-        {/* Token Grid */}
+        {/* Merchandise Grid */}
         {viewMode === "user" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
@@ -343,13 +446,13 @@ const MarketplacePage = () => {
                           ${item.price}
                         </div>
                         <div className="text-zinc-400 text-sm">
-                          {item.tokenAmount} tokens
+                          {item.stock} in stock
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
                         <div className="text-sm text-zinc-400">
-                          Seller: {item.player}
+                          By: {item.player}
                         </div>
                         <Button 
                           className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
