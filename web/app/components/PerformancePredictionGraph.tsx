@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 import {
   LineChart,
   Line,
@@ -21,26 +21,26 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-} from "recharts"
+} from "recharts";
 
 interface Player {
-  id: number
-  name: string
-  goals: number
-  assists: number
-  current_season_stats: { rating: number }
+  id: number;
+  name: string;
+  goals: number;
+  assists: number;
+  current_season_stats: { rating: number };
 }
 
 interface PerformancePredictionGraphProps {
-  player: Player
-  detailedData?: any
+  player: Player;
+  detailedData?: any;
 }
 
 // Generate performance data based on player's current stats
 const generatePerformanceData = (player: Player) => {
-  const currentGoals = player.goals
-  const currentAssists = player.assists
-  const currentRating = player.current_season_stats.rating
+  const currentGoals = player.goals;
+  const currentAssists = player.assists;
+  const currentRating = player.current_season_stats.rating;
 
   // Generate radar chart data comparing player vs average
   const radarData = [
@@ -70,7 +70,7 @@ const generatePerformanceData = (player: Player) => {
       average: 68,
     },
     { metric: "Form", player: 70 + (Math.random() - 0.5) * 30, average: 65 },
-  ]
+  ];
 
   // Match performance probabilities similar to API-Football
   const matchPerformance = [
@@ -90,7 +90,7 @@ const generatePerformanceData = (player: Player) => {
       type: "Man of Match",
       probability: Math.min(Math.max(10 + (currentRating - 7) * 20, 5), 35),
     },
-  ]
+  ];
 
   // Performance metrics bars (similar to API-Football style)
   const performanceMetrics = [
@@ -130,7 +130,7 @@ const generatePerformanceData = (player: Player) => {
       average: 42,
       color: "#00ffff",
     },
-  ]
+  ];
 
   // Goal performance expectations (Under/Over style)
   const goalPerformance = [
@@ -150,15 +150,15 @@ const generatePerformanceData = (player: Player) => {
       type: "Over 2.5 Goals",
       probability: Math.min((currentGoals / 20) * 25, 25),
     },
-  ]
+  ];
 
   return {
     radarData,
     matchPerformance,
     performanceMetrics,
     goalPerformance,
-  }
-}
+  };
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -173,19 +173,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           </p>
         ))}
       </div>
-    )
+    );
   }
-  return null
-}
+  return null;
+};
 
 const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
   player,
   detailedData,
 }) => {
-  const performanceData = generatePerformanceData(player)
+  const performanceData = generatePerformanceData(player);
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-4 md:grid-rows-2 gap-6">
       {/* Available Performance Header */}
       <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
         <h3 className="text-2xl font-bold text-white mb-4">
@@ -213,7 +213,7 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
         <h3 className="text-xl font-bold text-white mb-4 text-center">
           {player.name} vs League Average
         </h3>
-        <div className="h-96">
+        <div className="h-72 md:h-96">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={performanceData.radarData}>
               <PolarGrid stroke="#374151" />
@@ -360,26 +360,8 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
           )}
         </div>
       </div>
-
-      {/* Update Information */}
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-6 border border-zinc-700">
-        <div className="space-y-2 text-sm">
-          <p className="text-zinc-300">
-            <span className="font-semibold">Update Frequency:</span> This
-            performance analysis is updated every hour.
-          </p>
-          <p className="text-zinc-300">
-            <span className="font-semibold">Recommended Usage:</span> 1 analysis
-            per hour for active fixtures otherwise 1 per day.
-          </p>
-          <p className="text-zinc-400 text-xs mt-3">
-            * Performance analysis is based on current season statistics, team
-            form, and historical performance data.
-          </p>
-        </div>
-      </div>
     </div>
-  )
-}
+  );
+};
 
-export default PerformancePredictionGraph 
+export default PerformancePredictionGraph;

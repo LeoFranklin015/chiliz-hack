@@ -202,9 +202,7 @@ export default function PlayerPage() {
               <div
                 key={player.id}
                 className={`transition-all duration-200 ${
-                  idx === currentIndex
-                    ? "scale-105 ring-2 ring-lime-400"
-                    : "hover:scale-102"
+                  idx === currentIndex ? "scale-105" : "hover:scale-102"
                 }`}
               >
                 <ProfileCard
