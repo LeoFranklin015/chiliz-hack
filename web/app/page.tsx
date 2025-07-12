@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react"
 import FootballScene from "./components/FootBallScene"
 import ScoreZText from "./components/ScoreZText"
 import FeaturesSection from "./components/FeaturesSection"
+import NavBar1 from "./components/ui/NavBar1"
 
 // Component to handle navbar padding
 function NavbarPadding() {
@@ -128,6 +129,7 @@ export default function Home() {
   return (
     <>
       <NavbarPadding />
+      <NavBar1 />
       <div ref={sectionsRef} className="h-screen overflow-y-auto snap-y snap-mandatory">
         {/* Section 1: FootballScene */}
         <section className="h-screen snap-start relative">
@@ -135,10 +137,11 @@ export default function Home() {
           <div className="relative w-full h-screen">
             {/* Bottom div - behind canvas with football ground background */}
             <div 
-              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-black"
+              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat "
               style={{
-                backgroundImage: "url('/football-ground.jpg')",
-                opacity: 0.3
+                backgroundImage: "url('/ground.png')",
+                opacity: 0.5
+              
               }}
             />
             
@@ -146,7 +149,7 @@ export default function Home() {
             <div 
               className="absolute inset-0 z-1"
               style={{
-                backgroundColor: "rgba(0, 0, 0, 0.7)"
+                
               }}
             />
 

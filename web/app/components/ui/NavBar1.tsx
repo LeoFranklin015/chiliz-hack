@@ -56,19 +56,21 @@ function useScrollSection() {
   return currentSection
 }
 
-export default function TopNav() {
+export default function NavBar1() {
   const pathname = usePathname()
   const { isFootballSceneActive, animationCompleted } = useFootballSceneState()
   const currentSection = useScrollSection()
   
-  // Hide navbar completely on landing page (/)
-  const shouldShowNavbar = pathname !== "/"
+  // Determine if navbar should be visible
+  // On landing page: only show after animation is complete
+  // On other pages: show immediately
+  const shouldShowNavbar = pathname !== "/" || animationCompleted
 
   return (
     <AnimatePresence>
       {shouldShowNavbar && (
         <motion.nav 
-          className="relative z-50 w-full fixed top-0 left-0 right-0"
+          className="absolute z-50 w-full fixed top-0 left-0 right-0"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
@@ -88,7 +90,7 @@ export default function TopNav() {
           }}
         >
           <span className="text-lg font-mono font-semibold text-white tracking-widest"> SCORE</span>
-          <span className=" ml-[-8px] text-lg font-mono font-semibold text-red-600 tracking-widest"> Z</span>
+          <span className=" ml-[-6px] text-lg font-mono font-semibold text-red-600 tracking-widest">Z</span>
         </div>
 
         {/* Right Section: Navigation Links and Play Now Button */}
