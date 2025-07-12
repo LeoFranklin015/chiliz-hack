@@ -2,7 +2,7 @@
   "leagueId": 61,
   "season": 2024,
   "createdAt": "2025-07-12T15:38:31.639Z",
-  "lastUpdated": "2025-07-12T16:59:22.855Z",
+  "lastUpdated": "2025-07-12T17:07:37.958Z",
   "players": {
     "103": {
       "contractAddress": "0x51EC916511CaA6c6675A54B4dE156Abe706F41cd",
@@ -292,6 +292,15 @@
       "tokenName": "Yunis Abdelhamid (Ligue 1 2024)",
       "tokenSymbol": "YABD"
     },
+    "2741": {
+      "contractAddress": "0xbf758c7A825cc79751b710b79271fAE7E9ba71b4",
+      "playerName": "Mathew David Ryan",
+      "teamName": "Lens",
+      "position": "Goalkeeper",
+      "deployedAt": "2025-07-12T17:00:38.520Z",
+      "tokenName": "Mathew David Ryan (Ligue 1 2024)",
+      "tokenSymbol": "MRYA"
+    },
     "2781": {
       "contractAddress": "0xe42BdB4c3bF187A3718570230F9f10FA87cBDae5",
       "playerName": "Moses Daddy-Ajala Simon",
@@ -309,6 +318,15 @@
       "deployedAt": "2025-07-12T16:30:02.175Z",
       "tokenName": "Amigo Alfred Benjamin Junior Gomis (Ligue 1 2024)",
       "tokenSymbol": "AGOM"
+    },
+    "3007": {
+      "contractAddress": "0x18E859B40074fFf3f213e94dac4ebf39614473D6",
+      "playerName": "Przemysław Adam Frankowski",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:01:38.777Z",
+      "tokenName": "Przemysław Adam Frankowski (Ligue 1 2024)",
+      "tokenSymbol": "PFRA"
     },
     "3034": {
       "contractAddress": "0x9c5B173abd12A582B8d7989558cc9DdA4fd8520f",
@@ -418,6 +436,15 @@
       "tokenName": "Maxime Busi (Ligue 1 2024)",
       "tokenSymbol": "MBUS"
     },
+    "8683": {
+      "contractAddress": "0x460a11aA5649Fe34478a8eb391fAFf3ed7982b7c",
+      "playerName": "Irvin Charly Jose Cardona",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:06:35.728Z",
+      "tokenName": "Irvin Charly Jose Cardona (Ligue 1 2024)",
+      "tokenSymbol": "ICAR"
+    },
     "8966": {
       "contractAddress": "0x9D635630eBF0d0551AD571868e95896dBABBD4bF",
       "playerName": "Teddy Teuma",
@@ -471,6 +498,15 @@
       "deployedAt": "2025-07-12T15:44:05.865Z",
       "tokenName": "Ivan Ricardo Neves Abreu Cavaleiro (Ligue 1 2024)",
       "tokenSymbol": "ICAV"
+    },
+    "18785": {
+      "contractAddress": "0xF13FbA7D12626500f94B8D10d850c555345185FA",
+      "playerName": "Nampalys Mendy",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:00:23.908Z",
+      "tokenName": "Nampalys Mendy (Ligue 1 2024)",
+      "tokenSymbol": "NMEN"
     },
     "18881": {
       "contractAddress": "0x1C26E9639B03Dd6ce7785765c3f6443F1D5E7e6D",
@@ -570,6 +606,15 @@
       "deployedAt": "2025-07-12T16:09:05.099Z",
       "tokenName": "Romain Paul Jean-Michel Perraud (Ligue 1 2024)",
       "tokenSymbol": "RPER"
+    },
+    "20633": {
+      "contractAddress": "0x36bf20f8e6834F35E8579491598Ca8aa867f8212",
+      "playerName": "Jimmy Cabot",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T16:59:38.611Z",
+      "tokenName": "Jimmy Cabot (Ligue 1 2024)",
+      "tokenSymbol": "JCAB"
     },
     "20651": {
       "contractAddress": "0x0F4bB4Bb734348b3e1b148182FF12fFa136CF640",
@@ -886,6 +931,15 @@
       "tokenName": "Aloïs Confais (Ligue 1 2024)",
       "tokenSymbol": "ACON"
     },
+    "24207": {
+      "contractAddress": "0xeBb15e8b275615E0Ee7639270E6D943239A8865E",
+      "playerName": "Stéphane Imad Diarra",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:03:05.844Z",
+      "tokenName": "Stéphane Imad Diarra (Ligue 1 2024)",
+      "tokenSymbol": "SDIA"
+    },
     "24288": {
       "contractAddress": "0x4692380eF77300BDEef41662de030766F7963f16",
       "playerName": "Mohamed Lamine Bayo",
@@ -894,6 +948,15 @@
       "deployedAt": "2025-07-12T16:53:31.886Z",
       "tokenName": "Mohamed Lamine Bayo (Ligue 1 2024)",
       "tokenSymbol": "MBAY"
+    },
+    "24743": {
+      "contractAddress": "0xCe31E42F5d6FB58E5D1d8466Ca71cC78b686e7cc",
+      "playerName": "Zuriko Davitashvili",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:06:05.239Z",
+      "tokenName": "Zuriko Davitashvili (Ligue 1 2024)",
+      "tokenSymbol": "ZDAV"
     },
     "26694": {
       "contractAddress": "0x06578c7068a1b820810700799930053BF9eac1bB",
@@ -1002,6 +1065,15 @@
       "deployedAt": "2025-07-12T16:43:28.862Z",
       "tokenName": "Mikkel Desler Puggaard (Ligue 1 2024)",
       "tokenSymbol": "MPUG"
+    },
+    "39248": {
+      "contractAddress": "0x67E3223005de1dd73d3eBb8085e78E831AcdACc5",
+      "playerName": "Ibrahima Wadji",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:05:50.842Z",
+      "tokenName": "Ibrahima Wadji (Ligue 1 2024)",
+      "tokenSymbol": "IWAD"
     },
     "40594": {
       "contractAddress": "0xD16Ed1bB723F7eC41CF39CC25FA08ff366eBA674",
@@ -1174,6 +1246,15 @@
       "tokenName": "Francis Tanner James Tessmann (Ligue 1 2024)",
       "tokenSymbol": "FTES"
     },
+    "84101": {
+      "contractAddress": "0x990FB06Db5d47e5B3F69e3e4623dBEC22901E973",
+      "playerName": "Dylan Chambost",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:03:35.711Z",
+      "tokenName": "Dylan Chambost (Ligue 1 2024)",
+      "tokenSymbol": "DCHA"
+    },
     "85772": {
       "contractAddress": "0xd2015B01ED1B750433eA42a27A307e32BF6f49d2",
       "playerName": "Jérémy Le Douaron",
@@ -1264,6 +1345,15 @@
       "tokenName": "Abdoulaye Ousmane (Ligue 1 2024)",
       "tokenSymbol": "AOUS"
     },
+    "129670": {
+      "contractAddress": "0x271a5f7647b822CDd2C73e454eB4a645758f4517",
+      "playerName": "Nathanaël Mbuku",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:03:20.541Z",
+      "tokenName": "Nathanaël Mbuku (Ligue 1 2024)",
+      "tokenSymbol": "NMBU"
+    },
     "129680": {
       "contractAddress": "0x950AaB60cb49150375c434cf5CbE3Ca08348f65D",
       "playerName": "Hiang'a Mananga Mbock",
@@ -1272,6 +1362,15 @@
       "deployedAt": "2025-07-12T16:47:18.297Z",
       "tokenName": "Hiang'a Mananga Mbock (Ligue 1 2024)",
       "tokenSymbol": "HMBO"
+    },
+    "134280": {
+      "contractAddress": "0x1a2C30CeE0036C638f9938626C715b59404a4223",
+      "playerName": "Adam Abeddou",
+      "teamName": "Lens",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:00:07.853Z",
+      "tokenName": "Adam Abeddou (Ligue 1 2024)",
+      "tokenSymbol": "AABE"
     },
     "143830": {
       "contractAddress": "0xFb8De08AB9967221a564A68Fc2D8E08fEd8C8DF6",
@@ -1435,6 +1534,15 @@
       "tokenName": "Kazeem Aderemi Olaigbe (Ligue 1 2024)",
       "tokenSymbol": "KOLA"
     },
+    "174607": {
+      "contractAddress": "0xa409f11b2762f149C039902abDd2F90983E2fe16",
+      "playerName": "David Pereira da Costa",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:01:53.617Z",
+      "tokenName": "David Pereira da Costa (Ligue 1 2024)",
+      "tokenSymbol": "DCOS"
+    },
     "174723": {
       "contractAddress": "0xB78401405572f6598449afe030Ac03c0E8332D34",
       "playerName": "Zinédine Ould Khaled",
@@ -1461,6 +1569,33 @@
       "deployedAt": "2025-07-12T16:34:50.803Z",
       "tokenName": "Alexandre Pierre (Ligue 1 2024)",
       "tokenSymbol": "APIE"
+    },
+    "174797": {
+      "contractAddress": "0x85C7e34Ab3e5ce22F89D9A5e0441b93815b97029",
+      "playerName": "Maxence Rivera",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:02:50.565Z",
+      "tokenName": "Maxence Rivera (Ligue 1 2024)",
+      "tokenSymbol": "MRIV"
+    },
+    "174801": {
+      "contractAddress": "0x3D83C7864dDe265a3A7eB5f1164f291F28B207D4",
+      "playerName": "Aïmen Moueffek",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:07:35.952Z",
+      "tokenName": "Aïmen Moueffek (Ligue 1 2024)",
+      "tokenSymbol": "AMOU"
+    },
+    "175044": {
+      "contractAddress": "0x6144d49d1DB58FC16D1cdce1c9E73933A4A176de",
+      "playerName": "Bryan Djile Nokoue",
+      "teamName": "Saint Etienne",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T17:04:20.435Z",
+      "tokenName": "Bryan Djile Nokoue (Ligue 1 2024)",
+      "tokenSymbol": "BNOK"
     },
     "179400": {
       "contractAddress": "0x38208c87f4c6F5C1c8a7A997C093fDd0C187C005",
@@ -1804,6 +1939,24 @@
       "tokenName": "Aymeric Ahmed (Ligue 1 2024)",
       "tokenSymbol": "AAHM"
     },
+    "289554": {
+      "contractAddress": "0x21191d8aB980925190facEFbE72Abfa712Ede9ec",
+      "playerName": "Darling Bladi",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:03:50.750Z",
+      "tokenName": "Darling Bladi (Ligue 1 2024)",
+      "tokenSymbol": "DBLA"
+    },
+    "293130": {
+      "contractAddress": "0x58f48B8b382fc64913A0e9A77AC3c372A05fc6d0",
+      "playerName": "Mahmoud Bentayg",
+      "teamName": "Saint Etienne",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T17:05:05.379Z",
+      "tokenName": "Mahmoud Bentayg (Ligue 1 2024)",
+      "tokenSymbol": "MBEN"
+    },
     "293297": {
       "contractAddress": "0xee46D37A69fE5190B34ec806ED4154a9B93Ff274",
       "playerName": "John Joe Patrick Finn Benoa",
@@ -1848,6 +2001,15 @@
       "deployedAt": "2025-07-12T16:18:53.708Z",
       "tokenName": "Cher Ndour (Ligue 1 2024)",
       "tokenSymbol": "CNDO"
+    },
+    "322560": {
+      "contractAddress": "0x6b974D74CD4f1223d61f11Ad9092e68C46aC278F",
+      "playerName": "Lucas Frédéric Stassin",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:05:34.839Z",
+      "tokenName": "Lucas Frédéric Stassin (Ligue 1 2024)",
+      "tokenSymbol": "LSTA"
     },
     "322929": {
       "contractAddress": "0xe0F6B55426521C634e1B5fA9d4bDb45bCc37AEA0",
@@ -2056,6 +2218,33 @@
       "tokenName": "Ayman Kari (Ligue 1 2024)",
       "tokenSymbol": "AKAR"
     },
+    "337426": {
+      "contractAddress": "0x00b81DfeE4d68F232215ef767FE7489d0B7DE3d3",
+      "playerName": "Augustine Boakye",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:06:20.823Z",
+      "tokenName": "Augustine Boakye (Ligue 1 2024)",
+      "tokenSymbol": "ABOA"
+    },
+    "339599": {
+      "contractAddress": "0xDC2384AB7DF683521A704fBd24e19ac7a150633C",
+      "playerName": "Beres Owusu",
+      "teamName": "Saint Etienne",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T17:04:35.618Z",
+      "tokenName": "Beres Owusu (Ligue 1 2024)",
+      "tokenSymbol": "BOWU"
+    },
+    "339600": {
+      "contractAddress": "0x0a7cED272Cb945b29D1440bEf7a97437e4E16193",
+      "playerName": "Antoine Gauthier",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:07:05.591Z",
+      "tokenName": "Antoine Gauthier (Ligue 1 2024)",
+      "tokenSymbol": "AGAU"
+    },
     "340717": {
       "contractAddress": "0xC83F142864eD639ad6db47720964F24cc611fb5a",
       "playerName": "Eliot Pasture",
@@ -2245,6 +2434,15 @@
       "tokenName": "Ernest Nuamah Appiah (Ligue 1 2024)",
       "tokenSymbol": "EAPP"
     },
+    "351923": {
+      "contractAddress": "0xb5C46D6eB206eBE91834226B6ACCE6b32D3094D3",
+      "playerName": "Óscar Manuel Cortés Cortés",
+      "teamName": "Lens",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:01:23.060Z",
+      "tokenName": "Óscar Manuel Cortés Cortés (Ligue 1 2024)",
+      "tokenSymbol": "ÓCOR"
+    },
     "352990": {
       "contractAddress": "0x3EfB69c029C0f65ba332eF1ae831619994910e03",
       "playerName": "Amine Salama",
@@ -2262,6 +2460,15 @@
       "deployedAt": "2025-07-12T16:01:15.129Z",
       "tokenName": "Axel Gueguin (Ligue 1 2024)",
       "tokenSymbol": "AGUE"
+    },
+    "360098": {
+      "contractAddress": "0x9C10B7B1e63a147900D5506892078aF1032332C3",
+      "playerName": "Jibril Othman",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:04:50.132Z",
+      "tokenName": "Jibril Othman (Ligue 1 2024)",
+      "tokenSymbol": "JOTH"
     },
     "361348": {
       "contractAddress": "0x68A0c6A02BF1614Ddc403916441Af371733Bb970",
@@ -2452,6 +2659,24 @@
       "tokenName": "Noah Lahmadi (Ligue 1 2024)",
       "tokenSymbol": "NLAH"
     },
+    "385591": {
+      "contractAddress": "0xd4D60B764D00340B6B5415822Cdc29695fD3B10d",
+      "playerName": "Keny Roger Mbala",
+      "teamName": "Lens",
+      "position": "Defender",
+      "deployedAt": "2025-07-12T16:59:53.926Z",
+      "tokenName": "Keny Roger Mbala (Ligue 1 2024)",
+      "tokenSymbol": "KMBA"
+    },
+    "385636": {
+      "contractAddress": "0x0c3F93Ec404508cBA302EE3fDaFE2D138cd958Dc",
+      "playerName": "Jebryl Sahraoui",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:06:50.707Z",
+      "tokenName": "Jebryl Sahraoui (Ligue 1 2024)",
+      "tokenSymbol": "JSAH"
+    },
     "386275": {
       "contractAddress": "0x4B580641F6310507Fe9770DEdC6Cf03E421E0811",
       "playerName": "Ilyes Housni",
@@ -2506,6 +2731,15 @@
       "tokenName": "Christ Emmanuel Letono Mbondi (Ligue 1 2024)",
       "tokenSymbol": "CMBO"
     },
+    "392665": {
+      "contractAddress": "0xD60DFF0b878f33Bbf977617267FcCFaC501546DC",
+      "playerName": "Enzo Mayilla",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:04:05.808Z",
+      "tokenName": "Enzo Mayilla (Ligue 1 2024)",
+      "tokenSymbol": "EMAY"
+    },
     "392707": {
       "contractAddress": "0x610bceB08A20946b3BFd1f40B861Ea64CCdb63eE",
       "playerName": "Tommy Le Verge",
@@ -2533,6 +2767,15 @@
       "tokenName": "George Ilenikhena (Ligue 1 2024)",
       "tokenSymbol": "GILE"
     },
+    "395048": {
+      "contractAddress": "0x2FBB51b51233aC054fAef4496eb366A2a5A09B01",
+      "playerName": "Cheikh Fall",
+      "teamName": "Saint Etienne",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:07:20.589Z",
+      "tokenName": "Cheikh Fall (Ligue 1 2024)",
+      "tokenSymbol": "CFAL"
+    },
     "395760": {
       "contractAddress": "0xA79537928DE7E95eE5E521784505984dba4Ddc38",
       "playerName": "Yanis Ali Issoufou",
@@ -2550,6 +2793,15 @@
       "deployedAt": "2025-07-12T15:42:14.353Z",
       "tokenName": "Willsem Boussaid (Ligue 1 2024)",
       "tokenSymbol": "WBOU"
+    },
+    "395811": {
+      "contractAddress": "0x8d53ec233A959f6B9985c6a3A87a117138e7790E",
+      "playerName": "Fodé Sanassy Sylla",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:01:08.027Z",
+      "tokenName": "Fodé Sanassy Sylla (Ligue 1 2024)",
+      "tokenSymbol": "FSYL"
     },
     "395814": {
       "contractAddress": "0x74cD3a823df74e458178Fb35A84369298980a143",
@@ -2595,6 +2847,15 @@
       "deployedAt": "2025-07-12T16:10:20.778Z",
       "tokenName": "Sami Wattel Bello (Ligue 1 2024)",
       "tokenSymbol": "SBEL"
+    },
+    "402066": {
+      "contractAddress": "0x7d7bEeCFf43396b498942030a0F6c707436CE008",
+      "playerName": "Anthony Bermont",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:02:08.939Z",
+      "tokenName": "Anthony Bermont (Ligue 1 2024)",
+      "tokenSymbol": "ABER"
     },
     "402242": {
       "contractAddress": "0x6c228f4A215F9279FBc0Bd46e54C0B6f9fF01973",
@@ -2731,6 +2992,15 @@
       "tokenName": "Morgan Costarelli (Ligue 1 2024)",
       "tokenSymbol": "MCOS"
     },
+    "438816": {
+      "contractAddress": "0xEA9e26f934b1f9f32A6a62dA963C3F7085fa7ecE",
+      "playerName": "Alpha Diallo",
+      "teamName": "Lens",
+      "position": "Midfielder",
+      "deployedAt": "2025-07-12T17:00:53.795Z",
+      "tokenName": "Alpha Diallo (Ligue 1 2024)",
+      "tokenSymbol": "ADIA"
+    },
     "441284": {
       "contractAddress": "0xe6C61ddF71CbeA870144806116c6Cc7C5718d247",
       "playerName": "Naoufel El Hannach",
@@ -2820,6 +3090,15 @@
       "deployedAt": "2025-07-12T16:36:34.978Z",
       "tokenName": "Hugo Rauch (Ligue 1 2024)",
       "tokenSymbol": "HRAU"
+    },
+    "489911": {
+      "contractAddress": "0xD7305A9C9CbF2854F821D568d67Cf03429A416F5",
+      "playerName": "Djylian N´Guessan",
+      "teamName": "Saint Etienne",
+      "position": "Attacker",
+      "deployedAt": "2025-07-12T17:05:19.834Z",
+      "tokenName": "Djylian N´Guessan (Ligue 1 2024)",
+      "tokenSymbol": "DN´G"
     },
     "490138": {
       "contractAddress": "0xF72E87d14E206DB98F7Bcdb24b5cAFB26B35009D",
