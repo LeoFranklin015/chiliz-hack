@@ -3,17 +3,48 @@
 import Link from "next/link"
 import { Button } from "./button"
 import { Trophy } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+
+// Custom hook to detect FootballScene state
+function useFootballSceneState() {
+  const [isFootballSceneActive, setIsFootballSceneActive] = useState(false)
+  
+  useEffect(() => {
+    // Listen for custom events from FootballScene
+    const handleFootballSceneStart = () => setIsFootballSceneActive(true)
+    const handleFootballSceneEnd = () => setIsFootballSceneActive(false)
+    
+    window.addEventListener('football-scene-start', handleFootballSceneStart)
+    window.addEventListener('football-scene-end', handleFootballSceneEnd)
+    
+    return () => {
+      window.removeEventListener('football-scene-start', handleFootballSceneStart)
+      window.removeEventListener('football-scene-end', handleFootballSceneEnd)
+    }
+  }, [])
+  
+  return isFootballSceneActive
+}
 
 export default function TopNav() {
+  const pathname = usePathname()
+  const isFootballSceneActive = useFootballSceneState()
+  
+  // Hide navbar on landing page when FootballScene is active
+  if (pathname === "/" && isFootballSceneActive) {
+    return null
+  }
+
   return (
-    <nav className="relative z-50 w-full">
+    <nav className="relative z-50 w-full fixed top-0 left-0 right-0">
       <div className=" flex items-center justify-between">
         {/* Left Section: Logo */}
         <div
           className="relative bg-zinc-900 px-6 py-3 shadow-lg border border-zinc-800/50 flex items-center space-x-2"
           style={{
             clipPath: "polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%)",
-            boxShadow: "0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0, 255, 255, 0.1)",
+            boxShadow: "0 0 15px rgba(207, 10, 10, 0.2), inset 0 0 8px rgba(207, 10, 10, 0.1)",
           }}
         >
           <span className="text-lg font-mono font-semibold text-white tracking-widest"> ScoreX</span>
@@ -25,12 +56,12 @@ export default function TopNav() {
             className="relative bg-zinc-900 px-8 py-3 shadow-lg border border-zinc-800/50 flex items-center space-x-8"
             style={{
               clipPath: "polygon(0% 0%, 100% 0%, 95% 100%, 0% 100%)",
-              boxShadow: "0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0, 255, 255, 0.1)",
+              boxShadow: "0 0 15px rgba(207, 10, 10, 0.2), inset 0 0 8px rgba(207, 10, 10, 0.1)",
             }}
           >
             <Link
               href="/"
-              className="text-cyan-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
+              className="text-red-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
             >
               Leagues
             </Link>
@@ -52,14 +83,14 @@ export default function TopNav() {
           <Button
             className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group ml-[-10px]" // Adjusted margin to overlap
             style={{
-              background: "linear-gradient(90deg, rgba(0,255,255,0.2) 0%, rgba(0,255,255,0.4) 100%)",
+              background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
               clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
-              border: "1px solid rgba(0,255,255,0.5)",
-              boxShadow: "0 0 20px rgba(0,255,255,0.4)",
+              border: "1px solid rgba(207, 10, 10, 0.5)",
+              boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
             }}
           >
             <span className="relative z-10">Connect</span>
-            <div className="absolute inset-0 bg-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
           </Button>
         </div>
       </div>

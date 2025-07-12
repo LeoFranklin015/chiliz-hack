@@ -87,8 +87,17 @@ export default function FootballScene({ onAnimationComplete, onShowText }: Footb
   const [showText, setShowText] = useState(false)
   const [notified, setNotified] = useState(false)
 
+  // Dispatch custom events for navigation control
+  const dispatchFootballSceneEvent = (eventType: 'start' | 'end') => {
+    const event = new CustomEvent(`football-scene-${eventType}`)
+    window.dispatchEvent(event)
+  }
+
   // Initial animation
   useEffect(() => {
+    // Dispatch start event when component mounts
+    dispatchFootballSceneEvent('start')
+    
     let start: number | null = null
     let animationFrame: number
     const totalDuration = 2500
@@ -140,6 +149,8 @@ export default function FootballScene({ onAnimationComplete, onShowText }: Footb
             animationFrame = requestAnimationFrame(animateKey)
           } else {
             console.log("Key animation complete")
+            // Dispatch end event when animation completes
+            dispatchFootballSceneEvent('end')
           }
         }
         animationFrame = requestAnimationFrame(animateKey)
@@ -192,6 +203,8 @@ export default function FootballScene({ onAnimationComplete, onShowText }: Footb
             animationFrame = requestAnimationFrame(animateKey)
           } else {
             console.log("Click animation complete")
+            // Dispatch end event when animation completes
+            dispatchFootballSceneEvent('end')
           }
         }
         animationFrame = requestAnimationFrame(animateKey)
@@ -201,6 +214,13 @@ export default function FootballScene({ onAnimationComplete, onShowText }: Footb
     window.addEventListener("click", handleClick)
     return () => window.removeEventListener("click", handleClick)
   }, [animationComplete, keyPressed, showText])
+
+  // Cleanup: dispatch end event when component unmounts
+  useEffect(() => {
+    return () => {
+      dispatchFootballSceneEvent('end')
+    }
+  }, [])
 
   return (
     <>

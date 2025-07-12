@@ -35,7 +35,7 @@ const buildKeyframes = (
 
 const ScoreXText: React.FC<ScoreXTextProps> = ({
   showText,
-  text = "ScoreX",
+  text = "SC   REZ",
   delay = 200,
   className = "",
   animateBy = "letters",
@@ -98,7 +98,7 @@ const ScoreXText: React.FC<ScoreXTextProps> = ({
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
       <p 
         ref={ref} 
-        className={`text-7xl md:text-8xl font-white text-white tracking-wider gaming-text ${className} flex`}
+        className={`text-7xl font-weight-700 md:text-8xl font-red text-red tracking-wider gaming-text ${className} flex`}
        
       >
         {elements.map((segment, index) => {

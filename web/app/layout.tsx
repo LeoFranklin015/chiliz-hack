@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Tomorrow } from "next/font/google";
 import "./globals.css";
 import Provider from "./components/Provider";
-
+import TopNav from "./components/ui/topnavbar";
 import DotGrid from "./components/ui/dotGrid";
+
 const tomorrow = Tomorrow({
   variable: "--font-tomorrow",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "700","200","300","500","600"],
 });
 
 export const metadata: Metadata = {
@@ -38,7 +39,7 @@ export default function RootLayout({
               dotSize={2}
               gap={15}
               baseColor="#ffffff"
-              activeColor="#5227FF"
+              activeColor="#CF0A0A"
               proximity={120}
               shockRadius={250}
               shockStrength={5}
@@ -46,6 +47,9 @@ export default function RootLayout({
               returnDuration={1.5}
             />
           </div>
+
+          {/* Navigation Bar - will be hidden on landing page by TopNav component */}
+          <TopNav />
 
           {/* Main content */}
           <div className="relative z-10">{children}</div>

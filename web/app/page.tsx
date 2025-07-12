@@ -7,11 +7,7 @@ import { motion } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 import FootballScene from "./components/FootBallScene"
 import ScoreXText from "./components/ScoreXText"
-import HeroSection from "./components/HeroSection"
-import AboutSection from "./components/AboutSection"
-import PartnershipSection from "./components/PartnershipSection"
-import SalientFeaturesSection from "./components/SalientFeaturesSection"
-import TemplateNFTsSection from "./components/TemplateNFTsSection"
+
 import FeaturesSection from "./components/FeaturesSection"
 
 
@@ -77,10 +73,6 @@ export default function Home() {
         {/* ScoreX Text Overlay */}
         <ScoreXText 
           showText={showText}
-          text="SC   REX"
-          delay={200}
-          animateBy="letters"
-          direction="top"
         />
 
         {/* Top div - above canvas */}
@@ -105,13 +97,6 @@ export default function Home() {
         </div>
 
       </div>
-
-      {/* Main Landing Sections */}
-      <HeroSection />
-      <AboutSection />
-      <PartnershipSection />
-      <SalientFeaturesSection />
-      <TemplateNFTsSection />
       <FeaturesSection />
 
     </>
