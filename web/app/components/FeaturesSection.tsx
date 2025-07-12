@@ -1,5 +1,6 @@
-import React from 'react'
-import CardSwap, { Card } from './ui/cardswap'
+import React from "react";
+import CardSwap, { Card } from "./ui/cardswap";
+import { CustomConnectButton } from "./ConnectButton";
 
 const FeaturesSection = () => {
   return (
@@ -14,24 +15,40 @@ const FeaturesSection = () => {
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-lime-400">
                   Gaming Experience
                 </span>
+                <div className="flex justify-end">
+                  <CustomConnectButton />
+                </div>
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
-                ScoreX transforms fantasy sports with performance-driven tokenization. 
-                No speculation, no pump-and-dump - just pure skill and real rewards.
+                ScoreX transforms fantasy sports with performance-driven
+                tokenization. No speculation, no pump-and-dump - just pure skill
+                and real rewards.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-800/50 backdrop-blur-sm border border-cyan-400/20 rounded-lg p-6">
-                <div className="text-cyan-400 text-2xl font-bold mb-2">24/7</div>
-                <div className="text-white text-sm font-medium mb-1">Live Trading</div>
-                <div className="text-gray-400 text-xs">Real-time market dynamics</div>
+                <div className="text-cyan-400 text-2xl font-bold mb-2">
+                  24/7
+                </div>
+                <div className="text-white text-sm font-medium mb-1">
+                  Live Trading
+                </div>
+                <div className="text-gray-400 text-xs">
+                  Real-time market dynamics
+                </div>
               </div>
-              
+
               <div className="bg-gray-800/50 backdrop-blur-sm border border-lime-400/20 rounded-lg p-6">
-                <div className="text-lime-400 text-2xl font-bold mb-2">100%</div>
-                <div className="text-white text-sm font-medium mb-1">Performance Based</div>
-                <div className="text-gray-400 text-xs">Zero speculation trading</div>
+                <div className="text-lime-400 text-2xl font-bold mb-2">
+                  100%
+                </div>
+                <div className="text-white text-sm font-medium mb-1">
+                  Performance Based
+                </div>
+                <div className="text-gray-400 text-xs">
+                  Zero speculation trading
+                </div>
               </div>
             </div>
           </div>
@@ -54,10 +71,13 @@ const FeaturesSection = () => {
                     <div className="w-16 h-16 bg-cyan-400 rounded-full flex items-center justify-center mb-6">
                       <span className="text-2xl">⚡</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">Performance Trading</h3>
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      Performance Trading
+                    </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Player token values fluctuate based on real match performance metrics, 
-                      not market speculation. Every goal, assist, and save matters.
+                      Player token values fluctuate based on real match
+                      performance metrics, not market speculation. Every goal,
+                      assist, and save matters.
                     </p>
                   </div>
                   <div className="text-cyan-400 text-sm font-semibold">
@@ -72,10 +92,13 @@ const FeaturesSection = () => {
                     <div className="w-16 h-16 bg-lime-400 rounded-full flex items-center justify-center mb-6">
                       <span className="text-2xl">🏆</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">Season Rewards</h3>
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      Season Rewards
+                    </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      At season end, the total market pool is distributed between 
-                      token holders and actual players. Everyone wins when talent succeeds.
+                      At season end, the total market pool is distributed
+                      between token holders and actual players. Everyone wins
+                      when talent succeeds.
                     </p>
                   </div>
                   <div className="text-lime-400 text-sm font-semibold">
@@ -90,10 +113,12 @@ const FeaturesSection = () => {
                     <div className="w-16 h-16 bg-purple-400 rounded-full flex items-center justify-center mb-6">
                       <span className="text-2xl">📈</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">Live Markets</h3>
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      Live Markets
+                    </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Trade during matches with instant price updates. 
-                      Watch your portfolio grow as your players perform on the field.
+                      Trade during matches with instant price updates. Watch
+                      your portfolio grow as your players perform on the field.
                     </p>
                   </div>
                   <div className="text-purple-400 text-sm font-semibold">
@@ -108,10 +133,13 @@ const FeaturesSection = () => {
                     <div className="w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center mb-6">
                       <span className="text-2xl">⚖️</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">Fair Economics</h3>
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      Fair Economics
+                    </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      No pump-and-dump schemes or artificial inflation. 
-                      Pure performance-driven economics that reward skill and knowledge.
+                      No pump-and-dump schemes or artificial inflation. Pure
+                      performance-driven economics that reward skill and
+                      knowledge.
                     </p>
                   </div>
                   <div className="text-orange-400 text-sm font-semibold">
@@ -124,7 +152,7 @@ const FeaturesSection = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default FeaturesSection 
+export default FeaturesSection;
