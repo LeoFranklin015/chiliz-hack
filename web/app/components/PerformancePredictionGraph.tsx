@@ -136,19 +136,19 @@ const generatePerformanceData = (player: Player) => {
   const goalPerformance = [
     {
       type: "Under 0.5 Goals",
-      probability: Math.max(100 - (currentGoals / 20) * 80, 20),
+      probability: Math.max(100 - (currentGoals / 5) * 80, 20),
     },
     {
       type: "Over 0.5 Goals",
-      probability: Math.min((currentGoals / 20) * 80, 80),
+      probability: Math.min((currentGoals / 5) * 80, 80),
     },
     {
       type: "Over 1.5 Goals",
-      probability: Math.min((currentGoals / 20) * 45, 45),
+      probability: Math.min((currentGoals / 5) * 45, 45),
     },
     {
       type: "Over 2.5 Goals",
-      probability: Math.min((currentGoals / 20) * 25, 25),
+      probability: Math.min((currentGoals / 5) * 25, 25),
     },
   ];
 
@@ -191,7 +191,7 @@ const PerformancePredictionGraph: React.FC<PerformancePredictionGraphProps> = ({
         <h3 className="text-2xl font-bold text-white mb-4">
           Available Performance
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-10">
           {performanceData.matchPerformance.map(
             (performance: any, index: number) => (
               <div

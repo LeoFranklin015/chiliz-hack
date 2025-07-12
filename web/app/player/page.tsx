@@ -47,6 +47,8 @@ export default function PlayerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detailedPlayerData, setDetailedPlayerData] = useState<any>(null);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [buyAmount, setBuyAmount] = useState(1);
 
   // Keep selectedPlayer in sync with currentIndex
   useEffect(() => {
@@ -193,28 +195,93 @@ export default function PlayerPage() {
   return (
     <main className="flex min-h-screen items-start justify-start overflow-hidden text-white">
       {/* Left side - Player Carousel */}
-      <div className="w-1/2 p-8">
-        <h2 className="text-3xl font-bold mb-8 text-center">Select Player</h2>
+      <div className="w-1/2 p-8 flex flex-col items-center gap-6">
+        <h2 className="text-3xl font-bold text-white mb-2">Select Player</h2>
         {players.length > 0 ? (
-          <CircularCarousel
-            itemWidth={320}
-            items={players.map((player, idx) => (
-              <div
-                key={player.id}
-                className={`transition-all duration-200 ${
-                  idx === currentIndex ? "scale-105" : "hover:scale-102"
-                }`}
-              >
-                <ProfileCard
-                  avatarUrl={player.avatar}
-                  name={player.name}
-                  title={player.title}
-                />
+          <>
+            <div className="flex flex-col items-center gap-4 w-full">
+              <CircularCarousel
+                itemWidth={320}
+                items={players.map((player, idx) => (
+                  <div
+                    key={player.id}
+                    className={`transition-all duration-200 ${
+                      idx === currentIndex ? "scale-105" : "hover:scale-102"
+                    }`}
+                  >
+                    <ProfileCard
+                      avatarUrl={player.avatar}
+                      name={player.name}
+                      title={player.title}
+                    />
+                  </div>
+                ))}
+                currentIndex={currentIndex}
+                onChange={setCurrentIndex}
+              />
+
+              {/* Buy Now Button */}
+              <div className="text-center mt-4">
+                <button
+                  className="bg-lime-500 hover:bg-lime-600 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200"
+                  onClick={() => setShowBuyModal(true)}
+                >
+                  Buy Now
+                </button>
               </div>
-            ))}
-            currentIndex={currentIndex}
-            onChange={setCurrentIndex}
-          />
+            </div>
+            {/* Buy Modal */}
+            {showBuyModal && selectedPlayer && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                <div className="bg-zinc-900 border border-lime-400 rounded-xl p-8 w-full max-w-md relative">
+                  <button
+                    className="absolute top-2 right-2 text-zinc-400 hover:text-white text-2xl"
+                    onClick={() => setShowBuyModal(false)}
+                    aria-label="Close"
+                  >
+                    &times;
+                  </button>
+                  <h3 className="text-2xl font-bold mb-4 text-lime-400">
+                    Buy Fan Token
+                  </h3>
+                  <div className="mb-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-zinc-300">Availability:</span>
+                      <span className="text-white font-semibold">1000</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-zinc-300">Price:</span>
+                      <span className="text-lime-400 font-semibold">$2.50</span>
+                    </div>
+                  </div>
+                  <div className="mb-6">
+                    <label
+                      className="block text-zinc-300 mb-2"
+                      htmlFor="buy-amount"
+                    >
+                      Number of Tokens
+                    </label>
+                    <input
+                      id="buy-amount"
+                      type="number"
+                      min={1}
+                      value={buyAmount}
+                      onChange={(e) => setBuyAmount(Number(e.target.value))}
+                      className="w-full px-4 py-2 rounded-lg border border-zinc-600 bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-lime-400"
+                    />
+                  </div>
+                  <button
+                    className="w-full bg-lime-500 hover:bg-lime-600 text-black font-bold py-3 rounded-lg transition-all duration-200 text-lg"
+                    onClick={() => {
+                      /* handle buy logic here */
+                    }}
+                  >
+                    Buy Fan Token
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center text-zinc-400">
             <p>No players found</p>
