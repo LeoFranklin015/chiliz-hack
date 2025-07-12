@@ -6,7 +6,7 @@ import { Trophy } from "lucide-react"
 
 export default function TopNav() {
   return (
-    <nav className="relative z-50 w-full bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-800/50">
+    <nav className="relative z-50 w-full">
       <div className=" flex items-center justify-between">
         {/* Left Section: Logo */}
         <div
@@ -16,10 +16,7 @@ export default function TopNav() {
             boxShadow: "0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0, 255, 255, 0.1)",
           }}
         >
-          <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
-            <Trophy className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-lg font-mono font-bold text-white tracking-widest">FUTBOL NEXUS</span>
+          <span className="text-lg font-mono font-semibold text-white tracking-widest"> ScoreX</span>
         </div>
 
         {/* Right Section: Navigation Links and Play Now Button */}

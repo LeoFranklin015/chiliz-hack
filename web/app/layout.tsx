@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Tomorrow } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+
+import DotGrid from './components/ui/dotGrid';
+const tomorrow = Tomorrow({
+  variable: "--font-tomorrow",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+
 
 export const metadata: Metadata = {
   title: "ScoreX - Fantasy Sports Tokenization Platform",
@@ -23,19 +23,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full" style={{ fontFamily: 'var(--font-tomorrow)' }}>
+      <head>
+       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white relative`}
+        className={`${tomorrow.variable} antialiased bg-black text-white relative`}
       >
         {/* Global dot background pattern */}
-        <div
-          className="fixed inset-0 opacity-30 pointer-events-none z-0"
-          style={{
-            backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-            backgroundPosition: "0 0, 20px 20px",
-          }}
-        />
+<div className="fixed inset-0 opacity-30 pointer-events-none z-0">
+         <DotGrid
+         dotSize={2}
+         gap={15}
+         baseColor="#ffffff"
+         activeColor="#5227FF"
+         proximity={120}
+         shockRadius={250}
+         shockStrength={5}
+         resistance={750}
+         returnDuration={1.5}
+       />
+       </div>
         
         {/* Main content */}
         <div className="relative z-10">

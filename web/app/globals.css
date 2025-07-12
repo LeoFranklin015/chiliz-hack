@@ -5,12 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -22,7 +16,7 @@
 body {
   background: #000;
   color: #fff;
-  font-family: 'Geist', 'Inter', 'Arial', sans-serif;
+  font-family: 'Tomorrow', 'Inter', 'Arial', sans-serif;
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -186,3 +180,4 @@ body {
   0% { transform: translate(0, 0); }
   100% { transform: translate(-100px, -100px); }
 }
+

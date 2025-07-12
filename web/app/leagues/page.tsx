@@ -2,11 +2,24 @@
 
 import { useState } from "react"
 import { Badge } from "../components/ui/badge"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Trophy, Globe, Users, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import TopNav from "../components/ui/topnavbar"
 
 const leagues = [
+  {
+    id: "ligue-1",
+    name: "Ligue 1",
+    country: "France",
+    teams: 20,
+    value: "$2.1B",
+    tier: "Top",
+    accent: "from-blue-500 to-indigo-600",
+    borderColor: "border-blue-500/50",
+    textColor: "text-blue-400",
+    image: "https://www.lfp.fr/assets/LFP_REVEAL_WEB_LFP_DESKTOP_2016x1043_afe795e9ea.jpg",
+    gradient: "from-blue-900/20 to-indigo-900/20"
+  },
   {
     id: "premier-league",
     name: "Premier League",
@@ -14,8 +27,11 @@ const leagues = [
     teams: 20,
     value: "$6.2B",
     tier: "Elite",
-    accent: "border-cyan-500/50 text-cyan-400",
-    image: "/api/placeholder/600/200"
+    accent: "from-cyan-500 to-blue-600",
+    borderColor: "border-cyan-500/50",
+    textColor: "text-cyan-400",
+    image: "https://pbs.twimg.com/media/FtlvVLrXwAEGu-P.jpg:large",
+    gradient: "from-cyan-900/20 to-blue-900/20"
   },
   {
     id: "la-liga",
@@ -24,8 +40,11 @@ const leagues = [
     teams: 20,
     value: "$4.8B",
     tier: "Elite",
-    accent: "border-orange-500/50 text-orange-400",
-    image: "/api/placeholder/600/200"
+    accent: "from-orange-500 to-red-600",
+    borderColor: "border-orange-500/50",
+    textColor: "text-orange-400",
+    image: "https://s1.dmcdn.net/v/WPd601cSSai28Bl9R/x1080",
+    gradient: "from-orange-900/20 to-red-900/20"
   },
   {
     id: "bundesliga",
@@ -34,8 +53,11 @@ const leagues = [
     teams: 18,
     value: "$4.3B",
     tier: "Elite",
-    accent: "border-red-500/50 text-red-400",
-    image: "/api/placeholder/600/200"
+    accent: "from-red-500 to-pink-600",
+    borderColor: "border-red-500/50",
+    textColor: "text-red-400",
+    image: "https://downfield.ph/cdn/shop/collections/Bundesliga-Banner_1200x1200.webp?v=1681368379",
+    gradient: "from-red-900/20 to-pink-900/20"
   },
   {
     id: "serie-a",
@@ -44,29 +66,14 @@ const leagues = [
     teams: 20,
     value: "$3.9B",
     tier: "Elite",
-    accent: "border-green-500/50 text-green-400",
-    image: "/api/placeholder/600/200"
+    accent: "from-green-500 to-emerald-600",
+    borderColor: "border-green-500/50",
+    textColor: "text-green-400",
+    image: "https://e0.365dm.com/20/04/1600x900/skysports-serie-a_4972473.jpg?20200420082358",
+    gradient: "from-green-900/20 to-emerald-900/20"
   },
-  {
-    id: "ligue-1",
-    name: "Ligue 1",
-    country: "France",
-    teams: 20,
-    value: "$2.1B",
-    tier: "Top",
-    accent: "border-blue-500/50 text-blue-400",
-    image: "/api/placeholder/600/200"
-  },
-  {
-    id: "mls",
-    name: "Major League Soccer",
-    country: "USA",
-    teams: 29,
-    value: "$1.8B",
-    tier: "Growing",
-    accent: "border-purple-500/50 text-purple-400",
-    image: "/api/placeholder/600/200"
-  },
+  
+
 ]
 
 export default function LeaguesPage() {
@@ -76,38 +83,21 @@ export default function LeaguesPage() {
   const filteredLeagues = selectedTier === "All" ? leagues : leagues.filter((league) => league.tier === selectedTier)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-white font-sans">
+    <div className="min-h-screen  text-white">
       <TopNav />
       
-      {/* Hero Section */}
-      <div className="container mx-auto px-6 py-16 text-center relative z-10">
-        <div className="inline-block mb-4">
-          <Badge
-            variant="outline"
-            className="border-cyan-500/50 text-cyan-400 bg-cyan-500/10 px-4 py-2 text-sm font-mono tracking-wider uppercase"
-          >
-            Global Football Ecosystem
-          </Badge>
-        </div>
-        <h1 className="text-5xl md:text-7xl font-mono font-bold mb-6 tracking-tight leading-tight">
-          ELITE FOOTBALL
-          <span className="block text-cyan-400">LEAGUES</span>
-        </h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          Explore the world's most prestigious football competitions
-        </p>
-      </div>
 
-      {/* Tier Filter */}
-      <div className="flex justify-center mb-12 relative z-10">
-        <div className="flex space-x-2 bg-zinc-900/70 rounded-full p-2 backdrop-blur-sm border border-zinc-800/50">
+      
+
+      <div className="flex justify-center mb-16 relative z-10">
+        <div className="flex space-x-1 bg-zinc-900/80 rounded-2xl p-1 backdrop-blur-md border border-zinc-800/50 shadow-2xl">
           {tiers.map((tier) => (
             <button
               key={tier}
               onClick={() => setSelectedTier(tier)}
-              className={`px-6 py-2 rounded-full font-mono font-medium tracking-wide uppercase transition-all duration-300 ${
+              className={`px-8 py-3 rounded-xl font-mono font-medium tracking-wide uppercase transition-all duration-300 ${
                 selectedTier === tier
-                  ? "bg-cyan-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-cyan-600 to-cyan-500 text-white shadow-lg shadow-cyan-500/25"
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
               }`}
             >
@@ -118,96 +108,89 @@ export default function LeaguesPage() {
       </div>
 
       {/* Leagues Grid */}
-      <div className="container mx-auto px-6 pb-16 space-y-4 relative z-10">
-        {filteredLeagues.map((league) => (
+      <div className="container mx-auto px-6 pb-20 space-y-6 relative z-10 ">
+        {filteredLeagues.map((league, index) => (
           <Link key={league.id} href={`/map?league=${league.id}`}>
-            <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 group h-32">
+            <div 
+              className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500 group h-50  w-full transform hover:-translate-y-1 mb-10"
+              style={{
+                animationDelay: `${index * 100}ms`,
+              }}
+            >
               {/* Background Image */}
               <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105"
+                className="absolute inset-0 bg-cover bg-center transition-all duration-700 group-hover:scale-105"
                 style={{
                   backgroundImage: `url(${league.image})`,
-                  filter: "grayscale(100%) brightness(0.3)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  filter: " brightness(0.8)",
+                
                 }}
               />
+              <div className={`absolute inset-0 border-2 border-transparent group-hover:${league.borderColor} transition-all duration-300 rounded-2xl`} />
               
-              {/* Colored overlay on hover */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-transparent to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  filter: "none",
-                }}
-              />
-              
-              {/* Dark overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
-              
-              <div className="relative h-full p-6 flex items-center justify-between">
-                {/* Left - League Info */}
-                <div className="flex-1">
-                  <div className="flex items-center space-x-4 mb-2">
-                    <h3 className="text-2xl font-mono font-bold text-white tracking-wide">{league.name}</h3>
+              <div className="relative h-full p-8 flex items-center justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${league.accent} shadow-lg`} />
+                      <h3 className="text-3xl font-mono font-bold text-white tracking-wide group-hover:text-cyan-100 transition-colors duration-300">
+                        {league.name}
+                      </h3>
+                    </div>
                     <Badge
-                      className={`bg-zinc-800/50 ${league.accent} border px-3 py-1 text-xs uppercase font-mono`}
+                      className={`${league.borderColor} ${league.textColor} border bg-zinc-900/50 px-4 py-1 text-xs uppercase font-mono backdrop-blur-sm`}
                     >
                       {league.tier}
                     </Badge>
                   </div>
-                  <p className="text-zinc-300 text-lg font-medium mb-3">{league.country}</p>
+                  
+                  <div className="flex items-center space-x-2 text-zinc-300">
+                    <Globe className="w-4 h-4" />
+                    <p className="text-lg font-medium">{league.country}</p>
+                  </div>
                   
                   {/* Stats */}
-                  <div className="flex space-x-8 text-sm">
-                    <div>
-                      <span className="text-zinc-400 uppercase tracking-wide">Teams</span>
-                      <div className="text-white font-mono font-bold">{league.teams}</div>
+                  <div className="flex space-x-10 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-zinc-400" />
+                      <div>
+                        <span className="text-zinc-400 uppercase tracking-wide text-xs">Teams</span>
+                        <div className="text-white font-mono font-bold text-lg">{league.teams}</div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-zinc-400 uppercase tracking-wide">Value</span>
-                      <div className="text-white font-mono font-bold">{league.value}</div>
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="w-4 h-4 text-zinc-400" />
+                      <div>
+                        <span className="text-zinc-400 uppercase tracking-wide text-xs">Value</span>
+                        <div className="text-white font-mono font-bold text-lg">{league.value}</div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-zinc-400 uppercase tracking-wide">Rating</span>
-                      <div className="text-white font-mono font-bold">9.{Math.floor(Math.random() * 10)}</div>
+                    <div className="flex items-center space-x-2">
+                      <Trophy className="w-4 h-4 text-zinc-400" />
+                      <div>
+                        <span className="text-zinc-400 uppercase tracking-wide text-xs">Rating</span>
+                        <div className="text-white font-mono font-bold text-lg">9.{Math.floor(Math.random() * 10)}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Right - Arrow with Line */}
-                <div className="flex-shrink-0 ml-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-12 h-0.5 bg-zinc-600 group-hover:bg-cyan-400 transition-colors duration-300"></div>
-                    <div className="w-12 h-12 bg-zinc-800/50 rounded-full flex items-center justify-center group-hover:bg-cyan-500/20 transition-all duration-300 border border-zinc-700/50 group-hover:border-cyan-500/50">
-                      <ArrowRight className="w-6 h-6 text-zinc-400 group-hover:text-cyan-400 transition-colors duration-300" />
+                <div className="flex-shrink-0 ml-8">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-16 h-0.5 bg-zinc-600 group-hover:bg-gradient-to-r group-hover:${league.accent} transition-all duration-300`} />
+                    <div className={`w-14 h-14 bg-zinc-800/50 rounded-2xl flex items-center justify-center group-hover:bg-gradient-to-r group-hover:${league.accent} group-hover:shadow-lg transition-all duration-300 border border-zinc-700/50 group-hover:border-transparent`}>
+                      <ArrowRight className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors duration-300" />
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Hover Effect Border */}
-              <div className="absolute inset-0 border-2 border-transparent group-hover:border-cyan-500/30 transition-all duration-300 rounded-xl pointer-events-none" />
             </div>
           </Link>
         ))}
-      </div>
-
-      {/* Stats Section */}
-      <div className="container mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center relative z-10">
-        <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800/50 backdrop-blur-sm">
-          <div className="text-4xl font-mono font-bold text-cyan-400 mb-2">127</div>
-          <div className="text-zinc-400 uppercase font-medium tracking-wide">Total Teams</div>
-        </div>
-        <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800/50 backdrop-blur-sm">
-          <div className="text-4xl font-mono font-bold text-cyan-400 mb-2">$23.1B</div>
-          <div className="text-zinc-400 uppercase font-medium tracking-wide">Combined Value</div>
-        </div>
-        <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800/50 backdrop-blur-sm">
-          <div className="text-4xl font-mono font-bold text-cyan-400 mb-2">2.8B</div>
-          <div className="text-zinc-400 uppercase font-medium tracking-wide">Global Fans</div>
-        </div>
-        <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800/50 backdrop-blur-sm">
-          <div className="text-4xl font-mono font-bold text-cyan-400 mb-2">45</div>
-          <div className="text-zinc-400 uppercase font-medium tracking-wide">Countries</div>
-        </div>
       </div>
     </div>
   )
