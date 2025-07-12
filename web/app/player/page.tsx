@@ -41,11 +41,19 @@ interface ApiPlayer {
 }
 
 export default function PlayerPage() {
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerCard | null>(null);
   const [players, setPlayers] = useState<PlayerCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detailedPlayerData, setDetailedPlayerData] = useState<any>(null);
+
+  // Keep selectedPlayer in sync with currentIndex
+  useEffect(() => {
+    if (players.length > 0) {
+      setSelectedPlayer(players[currentIndex]);
+    }
+  }, [currentIndex, players]);
 
   // Fetch team players
   useEffect(() => {
@@ -53,38 +61,41 @@ export default function PlayerPage() {
       try {
         setLoading(true);
         // Using a popular team ID (Barcelona = 529)
-        const response = await fetch('/api/team-players?teamId=529');
-        
+        const response = await fetch("/api/team-players?teamId=529");
+
         if (!response.ok) {
-          throw new Error('Failed to fetch team players');
+          throw new Error("Failed to fetch team players");
         }
-        
+
         const data = await response.json();
-        
+
         if (data.response && Array.isArray(data.response)) {
-          const transformedPlayers: PlayerCard[] = data.response.map((apiPlayer: ApiPlayer) => {
-            const stats = apiPlayer.statistics[0]; // Get first team's stats
-            return {
-              id: apiPlayer.player.id,
-              name: apiPlayer.player.name,
-              title: stats?.games?.position || "Player",
-              avatar: apiPlayer.player.photo,
-              handle: apiPlayer.player.name.toLowerCase().replace(/\s+/g, ''),
-              status: "Online",
-              goals: stats?.goals?.total || 0,
-              assists: stats?.goals?.assists || 0,
-              current_season_stats: {
-                rating: parseFloat(stats?.games?.rating || "7.0")
-              },
-            };
-          });
-          
+          const transformedPlayers: PlayerCard[] = data.response.map(
+            (apiPlayer: ApiPlayer) => {
+              const stats = apiPlayer.statistics[0]; // Get first team's stats
+              return {
+                id: apiPlayer.player.id,
+                name: apiPlayer.player.name,
+                title: stats?.games?.position || "Player",
+                avatar: apiPlayer.player.photo,
+                handle: apiPlayer.player.name.toLowerCase().replace(/\s+/g, ""),
+                status: "Online",
+                goals: stats?.goals?.total || 0,
+                assists: stats?.goals?.assists || 0,
+                current_season_stats: {
+                  rating: parseFloat(stats?.games?.rating || "7.0"),
+                },
+              };
+            }
+          );
           setPlayers(transformedPlayers);
         } else {
           setPlayers([]);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch team players');
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch team players"
+        );
         // Fallback to mock data if API fails
         setPlayers([
           {
@@ -138,16 +149,18 @@ export default function PlayerPage() {
       }
 
       try {
-        const response = await fetch(`/api/player?playerId=${selectedPlayer.id}`);
-        
+        const response = await fetch(
+          `/api/player?playerId=${selectedPlayer.id}`
+        );
+
         if (!response.ok) {
-          throw new Error('Failed to fetch player details');
+          throw new Error("Failed to fetch player details");
         }
-        
+
         const data = await response.json();
         setDetailedPlayerData(data.response?.[0] || null);
       } catch (err) {
-        console.error('Failed to fetch player details:', err);
+        console.error("Failed to fetch player details:", err);
         setDetailedPlayerData(null);
       }
     };
@@ -185,14 +198,11 @@ export default function PlayerPage() {
         {players.length > 0 ? (
           <CircularCarousel
             itemWidth={320}
-            items={players.map((player) => (
+            items={players.map((player, idx) => (
               <div
                 key={player.id}
-                onClick={() => setSelectedPlayer(player)}
-                className={`cursor-pointer transition-all duration-200 ${
-                  selectedPlayer?.id === player.id
-                    ? "scale-105 ring-2 ring-lime-400"
-                    : "hover:scale-102"
+                className={`transition-all duration-200 ${
+                  idx === currentIndex ? "scale-105" : "hover:scale-102"
                 }`}
               >
                 <ProfileCard
@@ -202,6 +212,8 @@ export default function PlayerPage() {
                 />
               </div>
             ))}
+            currentIndex={currentIndex}
+            onChange={setCurrentIndex}
           />
         ) : (
           <div className="text-center text-zinc-400">
@@ -232,7 +244,8 @@ export default function PlayerPage() {
                 Select a Player
               </h3>
               <p className="text-zinc-500">
-                Choose a player from the carousel to view their performance analysis
+                Choose a player from the carousel to view their performance
+                analysis
               </p>
             </div>
           </div>
