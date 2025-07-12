@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing teamId" }, { status: 400 });
   }
 
-  const apiKey = process.env.FOOTBALL_API_KEY;
+  const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "API key not configured" },
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const response = await fetch(
-      `https://v3.football.api-sports.io/teams?id=${teamId}`,
+      `https://v3.football.api-sports.io/players?team=${teamId}&season=2024`,
       {
         method: "GET",
         headers: {
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch team data" },
+      { error: "Failed to fetch team players" },
       { status: 500 }
     );
   }

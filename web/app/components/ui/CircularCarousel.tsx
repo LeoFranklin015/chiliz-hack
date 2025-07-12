@@ -46,7 +46,7 @@ const CircularCarousel = React.forwardRef<
         {...props}
       >
         <div
-          className="relative h-full"
+          className="relative "
           style={{
             width: `${itemWidth}px`,
             height: `400px`, // let's assume a fixed height for cards
