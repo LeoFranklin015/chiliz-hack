@@ -1,22 +1,23 @@
 export const teamFanTokens = {
-  ANG: "0x3d8BDbD1D5534D57DA1e450Ed96F979aAA3Aa919",
-  LIL: "0x95c2A67ac78e708488752DED6055DCc1972A8517",
-  LYO: "0x009B128Ad5a0389a8026AF81d6Cf0FEB1Bb0Ef90",
-  MAR: "0x455dd9BAfEc2587F14cEE177cbd0975925b3fD3b",
-  MON: "0xFf3f95F771038Be969A20E09153bA5F727Bf5BD5",
-  NAN: "0x67942C366c1108c47E377a2336f39Ca63651b162",
-  NIC: "0xcCbd316f48B01DE98b41885E8EB0e0C24E48a66e",
-  PAR: "0x2673390Ab6a314BDfc80f31Da9B0e5165e47A427",
-  REI: "0xEf3FdF12E4296382b1E3350DAdCE341d7D1Ac7c6",
-  REN: "0x13b17e96F53E073229C6708268C62cCFA3fb35C6",
-  STR: "0x6406dA7A1bD674726092185899402D8CAde996ED",
-  TOU: "0xD566245F229D1Fed29e4fC051636f0B9eD878713",
-  BRE: "0xF267DDd705f15926763a861eB4Ee775AC6cD5aAb",
-  AUX: "0xf454eaB09D8a4096e8d0bFadbf0e57325b899Bc3",
-  HAV: "0x5a2379c3660c2ead4e2c3470a455CF234944bB78",
-  MET: "0x34e660186117dF3CA000A4432aa49977a6aB36e3",
-  LEN: "0x4137Cb00a45abD09457758eC6923B8B8C1E27217",
-  ETI: "0xeB04AcaACF482cE1C78640B29A05a3889894F8B2",
+  ANG: "0x36AbF0244bbCA4c5D81f2926Ee1af0a0961abf9C",
+  LIL: "0x734597F88e643e1ba3b203344ed4b3c207fb2d1e",
+  LYO: "0xac00c7E327de18Ab4a0e7a070B93a238d85dcB5E",
+  MAR: "0x15ae822991e771607720b47075E9a055Ca6dDef1",
+  MON: "0x0fB59887Afa582F2CB54afd60C136661B9b88397",
+  NAN: "0xe9B05f0a13DDacA88c4AC077B41541f67eBC2233",
+  NIC: "0x6B8f8deA6d535e7fA2Dfc368A664a2Bbc0F44824",
+  PAR: "0x969606F52a7f4C23A34E0C3A0411037aB53dD4cf",
+  REI: "0x68891BAD37c6Fe31462A613deE180D9F2802942E",
+  REN: "0xf68F6bCD268435859bE01BdF455DfF368D70c55E",
+  STR: "0xd15C091442fc2b8987Fc0FE60ad7B88e46A8e1bD",
+  TOU: "0xb52b9546E9db212431e4F2aEFC4C52EA7fBdeb16",
+  BRE: "0x34Bac9Dba4fDa38272e58C05C6F76F98A39c6B8c",
+  AUX: "0xAA076081928a000de1Aa91970EAf252130951705",
+  HAV: "0xA9107210A411F67041cE1417112014b573610F6f",
+  MET: "0x4Cca6a613b339c3309c011e598DFfD0Cd9382C0d",
+  LEN: "0xB25B0a894C99215A588CC18186FcfC72382637bC",
+  ETI: "0x0F8c2e2F441C321264Ef2162Fb55261384485dc2",
+  MOA: "0x3Aa9de7b2edDBC03904A75a66B49284c2Ea51C36",
 };
 
 export const players = [
@@ -13149,7 +13150,7 @@ export const teams = {
       team: {
         id: 91,
         name: "Monaco",
-        code: "MON",
+        code: "MOA",
         country: "France",
         founded: 1919,
         national: false,
@@ -13367,3 +13368,366 @@ export const teams = {
     },
   ],
 };
+
+export const FANTOKEN_ABI = [
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "name",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "symbol",
+        type: "string",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "allowance",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "needed",
+        type: "uint256",
+      },
+    ],
+    name: "ERC20InsufficientAllowance",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "balance",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "needed",
+        type: "uint256",
+      },
+    ],
+    name: "ERC20InsufficientBalance",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "approver",
+        type: "address",
+      },
+    ],
+    name: "ERC20InvalidApprover",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "receiver",
+        type: "address",
+      },
+    ],
+    name: "ERC20InvalidReceiver",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+    ],
+    name: "ERC20InvalidSender",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+    ],
+    name: "ERC20InvalidSpender",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "Approval",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "Transfer",
+    type: "event",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+    ],
+    name: "allowance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "approve",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "balanceOf",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "burn",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "decimals",
+    outputs: [
+      {
+        internalType: "uint8",
+        name: "",
+        type: "uint8",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "mint",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "name",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "symbol",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalSupply",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "transfer",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "transferFrom",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];

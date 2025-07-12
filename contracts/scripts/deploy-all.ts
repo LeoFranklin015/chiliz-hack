@@ -3,7 +3,11 @@ import { PlayerToken as PlayerTokenType } from "../typechain-types/contracts/Pla
 import * as fs from "fs";
 import * as path from "path";
 import dotenv from "dotenv";
-import { ApiFootballAdapter, ApiFootballTeam, ApiFootballPlayer } from "../src/adapter/api-football-adapter";
+import {
+  ApiFootballAdapter,
+  ApiFootballTeam,
+  ApiFootballPlayer,
+} from "../src/adapter/api-football-adapter";
 
 // Load environment variables
 dotenv.config();
@@ -107,54 +111,53 @@ interface DeploymentSummary {
 
 // League name mapping
 const LEAGUE_NAMES: Record<number, string> = {
-  74: 'Brasileiro Women',
-  61: 'Ligue 1',
-  39: 'Premier League',
-  140: 'La Liga',
-  135: 'Serie A',
+  74: "Brasileiro Women",
+  61: "Ligue 1",
+  39: "Premier League",
+  140: "La Liga",
+  135: "Serie A",
 };
 
 // Team ID to token symbol mapping for Ligue 1
 const TEAM_TOKEN_MAPPING: Record<number, string> = {
-    77: 'ANG',   // Angers
-    79: 'LIL',   // Lille
-    80: 'LYO',   // Lyon
-    81: 'MAR',   // Marseille
-    82: 'MON',   // Montpellier
-    83: 'NAN',   // Nantes
-    84: 'NIC',   // Nice
-    85: 'PAR',   // Paris Saint-Germain
-    91: 'MON',   // Monaco (⚠️ Symbol conflict with Montpellier)
-    93: 'REI',   // Reims
-    94: 'REN',   // Rennes
-    95: 'STR',   // Strasbourg
-    96: 'TOU',   // Toulouse
-    106: 'BRE',  // Stade Brestois 29
-    108: 'AUX',  // Auxerre
-    111: 'HAV',  // Le Havre
-    112: 'MET',  // Metz
-    116: 'LEN',  // Lens
-    1063: 'ETI'  // Saint Etienne
-  };
-  
+  77: "ANG", // Angers
+  79: "LIL", // Lille
+  80: "LYO", // Lyon
+  81: "MAR", // Marseille
+  82: "MON", // Montpellier
+  83: "NAN", // Nantes
+  84: "NIC", // Nice
+  85: "PAR", // Paris Saint-Germain
+  91: "MOA", // Monaco (⚠️ Symbol conflict with Montpellier)
+  93: "REI", // Reims
+  94: "REN", // Rennes
+  95: "STR", // Strasbourg
+  96: "TOU", // Toulouse
+  106: "BRE", // Stade Brestois 29
+  108: "AUX", // Auxerre
+  111: "HAV", // Le Havre
+  112: "MET", // Metz
+  116: "LEN", // Lens
+  1063: "ETI", // Saint Etienne
+};
 
 async function main() {
   const config: Config = {
     leagueId: 61, // Ligue 1 - confirmed working
     season: 2024, // Current season - confirmed working
-    initialSupply: '1000000',
-    apiFootballKey: process.env.API_FOOTBALL_KEY || ''
+    initialSupply: "1000000",
+    apiFootballKey: process.env.API_FOOTBALL_KEY || "",
   };
 
   // Validate required environment variables
   if (!config.apiFootballKey) {
-    throw new Error('API_FOOTBALL_KEY environment variable is required');
+    throw new Error("API_FOOTBALL_KEY environment variable is required");
   }
 
-  console.log('Configuration:', {
+  console.log("Configuration:", {
     leagueId: config.leagueId,
     season: config.season,
-    initialSupply: config.initialSupply
+    initialSupply: config.initialSupply,
   });
 
   // Initialize registry
@@ -163,90 +166,107 @@ async function main() {
 
   // Initialize API adapter
   const adapter = new ApiFootballAdapter({
-    apiKey: config.apiFootballKey
+    apiKey: config.apiFootballKey,
   });
 
-  const leagueName = LEAGUE_NAMES[config.leagueId] || `League ${config.leagueId}`;
+  const leagueName =
+    LEAGUE_NAMES[config.leagueId] || `League ${config.leagueId}`;
 
   // Load team token addresses
   let teamTokenAddresses: Record<string, string> = {};
   try {
-    teamTokenAddresses = JSON.parse(fs.readFileSync('teamFanTokenAddress.json', 'utf8'));
-    console.log(`📋 Loaded ${Object.keys(teamTokenAddresses).length} team token addresses`);
+    teamTokenAddresses = JSON.parse(
+      fs.readFileSync("teamFanTokenAddress.json", "utf8")
+    );
+    console.log(
+      `📋 Loaded ${Object.keys(teamTokenAddresses).length} team token addresses`
+    );
   } catch (error) {
-    console.warn('⚠️  Could not load teamFanTokenAddress.json, will use default payment token');
+    console.warn(
+      "⚠️  Could not load teamFanTokenAddress.json, will use default payment token"
+    );
   }
 
   try {
     // Step 1: Fetch all teams
-    console.log('\n📋 Step 1: Fetching all teams...');
+    console.log("\n📋 Step 1: Fetching all teams...");
     const apiTeams = await adapter.fetchTeams(config.leagueId, config.season);
     console.log(`✅ Found ${apiTeams.length} teams`);
 
     // Convert API teams to our format
-    const teams: Team[] = apiTeams.map(apiTeam => ({
+    const teams: Team[] = apiTeams.map((apiTeam) => ({
       id: apiTeam.team.id,
       name: apiTeam.team.name,
       code: apiTeam.team.code,
-      country: apiTeam.team.country
+      country: apiTeam.team.country,
     }));
 
     // Step 2: Process each team sequentially
-    console.log('\n👥 Step 2: Processing teams and deploying player tokens...');
+    console.log("\n👥 Step 2: Processing teams and deploying player tokens...");
     const allDeployedTokens: DeploymentInfo[] = [];
     let totalPlayersProcessed = 0;
 
     for (let teamIndex = 0; teamIndex < teams.length; teamIndex++) {
       const team = teams[teamIndex];
-      console.log(`\n🏆 Processing Team ${teamIndex + 1}/${teams.length}: ${team.name}`);
+      console.log(
+        `\n🏆 Processing Team ${teamIndex + 1}/${teams.length}: ${team.name}`
+      );
       console.log(`   Team ID: ${team.id}, Country: ${team.country}`);
 
       try {
         // Fetch players for this team
         console.log(`   📥 Fetching players for ${team.name}...`);
-        const apiPlayers = await adapter.fetchTeamPlayers(team.id, config.leagueId, config.season);
-        
-        console.log(`   🔍 Raw API response: ${apiPlayers.length} players found`);
+        const apiPlayers = await adapter.fetchTeamPlayers(
+          team.id,
+          config.leagueId,
+          config.season
+        );
+
+        console.log(
+          `   🔍 Raw API response: ${apiPlayers.length} players found`
+        );
         if (apiPlayers.length > 0) {
           console.log(`   📊 Sample player data:`, {
             id: apiPlayers[0].player.id,
             name: `${apiPlayers[0].player.firstname} ${apiPlayers[0].player.lastname}`,
-            statsCount: apiPlayers[0].statistics.length
+            statsCount: apiPlayers[0].statistics.length,
           });
         }
-        
+
         // Convert API players to our format
-        const players: Player[] = apiPlayers.map(apiPlayer => {
+        const players: Player[] = apiPlayers.map((apiPlayer) => {
           const stats = apiPlayer.statistics[0]; // Get first stats entry
           return {
             player: apiPlayer.player.id,
             firstname: apiPlayer.player.firstname,
             lastname: apiPlayer.player.lastname,
             teamname: stats?.team.name || team.name,
-            position: stats?.games.position || 'Unknown',
+            position: stats?.games.position || "Unknown",
             nationality: apiPlayer.player.nationality,
-            age: apiPlayer.player.age
+            age: apiPlayer.player.age,
           };
         });
 
         // Add team info to each player
-        const playersWithTeam: PlayerWithTeam[] = players.map(player => ({
+        const playersWithTeam: PlayerWithTeam[] = players.map((player) => ({
           ...player,
           teamId: team.id,
           teamName: team.name,
           teamCode: team.code,
-          teamCountry: team.country
+          teamCountry: team.country,
         }));
 
         console.log(`   ✅ Found ${players.length} players in ${team.name}`);
 
         // Deploy tokens for all players in this team
-        console.log(`   🎯 Deploying tokens for all players in ${team.name}...`);
+        console.log(
+          `   🎯 Deploying tokens for all players in ${team.name}...`
+        );
         const teamDeployedTokens = await deployTokensForTeam(
-          playersWithTeam, 
-          team, 
-          leagueName, 
-          config, 
+          playersWithTeam,
+          team,
+          leagueName,
+          config,
           totalPlayersProcessed,
           registry,
           registryFile,
@@ -257,7 +277,9 @@ async function main() {
         allDeployedTokens.push(...teamDeployedTokens);
         totalPlayersProcessed += players.length;
 
-        console.log(`   ✅ Successfully deployed ${teamDeployedTokens.length}/${players.length} tokens for ${team.name}`);
+        console.log(
+          `   ✅ Successfully deployed ${teamDeployedTokens.length}/${players.length} tokens for ${team.name}`
+        );
 
         // Save registry after each team
         saveRegistry(registry, registryFile);
@@ -268,16 +290,19 @@ async function main() {
           console.log(`   ⏳ Waiting 3 seconds before next team...`);
           await adapter.waitForRateLimit(3000);
         }
-
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`   ❌ Failed to process team ${team.name}:`, errorMessage);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(
+          `   ❌ Failed to process team ${team.name}:`,
+          errorMessage
+        );
       }
     }
 
     // Step 3: Generate deployment summary
-    console.log('\n📊 Step 3: Generating deployment summary...');
-    
+    console.log("\n📊 Step 3: Generating deployment summary...");
+
     const summary: DeploymentSummary = {
       totalTeams: teams.length,
       totalPlayers: totalPlayersProcessed,
@@ -288,10 +313,10 @@ async function main() {
       season: config.season,
       deploymentTime: new Date().toISOString(),
       registryFile: registryFile,
-      deployedTokensList: allDeployedTokens
+      deployedTokensList: allDeployedTokens,
     };
 
-    console.log('\n🎉 Deployment Summary:');
+    console.log("\n🎉 Deployment Summary:");
     console.log(`- Total teams processed: ${summary.totalTeams}`);
     console.log(`- Total players processed: ${summary.totalPlayers}`);
     console.log(`- Successfully deployed: ${summary.deployedTokens}`);
@@ -308,16 +333,22 @@ async function main() {
     // Final registry save
     saveRegistry(registry, registryFile);
     console.log(`\n💾 Final registry saved to: ${registryFile}`);
-    console.log(`📊 Registry contains ${Object.keys(registry.players).length} player contracts`);
+    console.log(
+      `📊 Registry contains ${
+        Object.keys(registry.players).length
+      } player contracts`
+    );
 
     return summary;
-
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ Deployment failed:', errorMessage);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Deployment failed:", errorMessage);
     // Save registry even on failure
     saveRegistry(registry, registryFile);
-    console.log(`💾 Registry saved to ${registryFile} despite deployment failure`);
+    console.log(
+      `💾 Registry saved to ${registryFile} despite deployment failure`
+    );
     throw error;
   }
 }
@@ -328,25 +359,37 @@ async function main() {
 function loadOrCreateRegistry(registryFile: string, config: Config): Registry {
   if (fs.existsSync(registryFile)) {
     console.log(`📖 Loading existing registry from ${registryFile}`);
-    const existingRegistry = JSON.parse(fs.readFileSync(registryFile, 'utf8')) as Registry;
-    
+    const existingRegistry = JSON.parse(
+      fs.readFileSync(registryFile, "utf8")
+    ) as Registry;
+
     // Validate registry structure
-    if (existingRegistry.leagueId === config.leagueId && 
-        existingRegistry.season === config.season) {
-      console.log(`✅ Found existing registry with ${Object.keys(existingRegistry.players).length} players`);
+    if (
+      existingRegistry.leagueId === config.leagueId &&
+      existingRegistry.season === config.season
+    ) {
+      console.log(
+        `✅ Found existing registry with ${
+          Object.keys(existingRegistry.players).length
+        } players`
+      );
       return existingRegistry;
     } else {
-      console.log(`⚠️  Existing registry is for different league/season, creating new one`);
+      console.log(
+        `⚠️  Existing registry is for different league/season, creating new one`
+      );
     }
   }
 
-  console.log(`📝 Creating new registry for league ${config.leagueId}, season ${config.season}`);
+  console.log(
+    `📝 Creating new registry for league ${config.leagueId}, season ${config.season}`
+  );
   return {
     leagueId: config.leagueId,
     season: config.season,
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
-    players: {}
+    players: {},
   };
 }
 
@@ -362,12 +405,12 @@ function saveRegistry(registry: Registry, registryFile: string): void {
  * Deploy tokens for all players in a specific team
  */
 async function deployTokensForTeam(
-  players: PlayerWithTeam[], 
-  team: Team, 
-  leagueName: string, 
-  config: Config, 
-  totalPlayersProcessed: number, 
-  registry: Registry, 
+  players: PlayerWithTeam[],
+  team: Team,
+  leagueName: string,
+  config: Config,
+  totalPlayersProcessed: number,
+  registry: Registry,
   registryFile: string,
   adapter: ApiFootballAdapter,
   teamTokenAddresses: Record<string, string>
@@ -377,11 +420,17 @@ async function deployTokensForTeam(
 
   for (let i = 0; i < players.length; i++) {
     const player = players[i];
-    
+
     try {
       // Check if player already has a contract in registry
       if (registry.players[player.player]) {
-        console.log(`     ⏭️  Skipping ${player.firstname} ${player.lastname} - already deployed at ${registry.players[player.player].contractAddress}`);
+        console.log(
+          `     ⏭️  Skipping ${player.firstname} ${
+            player.lastname
+          } - already deployed at ${
+            registry.players[player.player].contractAddress
+          }`
+        );
         continue;
       }
 
@@ -390,28 +439,36 @@ async function deployTokensForTeam(
       const tokenName = `${fullName} (${leagueName} ${config.season})`;
       const tokenSymbol = generateTokenSymbol(fullName);
 
-      console.log(`     Deploying token for ${fullName} (${i + 1}/${players.length})`);
+      console.log(
+        `     Deploying token for ${fullName} (${i + 1}/${players.length})`
+      );
       console.log(`       Name: ${tokenName}`);
       console.log(`       Symbol: ${tokenSymbol}`);
       console.log(`       Player ID: ${player.player}`);
 
       // Get team token address for payment
       const teamTokenSymbol = TEAM_TOKEN_MAPPING[player.teamId];
-      const teamTokenAddress = teamTokenSymbol ? teamTokenAddresses[teamTokenSymbol] : null;
-      
+      const teamTokenAddress = teamTokenSymbol
+        ? teamTokenAddresses[teamTokenSymbol]
+        : null;
+
       if (!teamTokenAddress) {
-        console.log(`       ⚠️  No team token found for team ${player.teamId}, skipping deployment`);
+        console.log(
+          `       ⚠️  No team token found for team ${player.teamId}, skipping deployment`
+        );
         continue;
       }
-      
-      console.log(`       💰 Using team token: ${teamTokenSymbol} (${teamTokenAddress})`);
-      
+
+      console.log(
+        `       💰 Using team token: ${teamTokenSymbol} (${teamTokenAddress})`
+      );
+
       // Deploy player token contract with explicit gas limit
       console.log(`       ⛽ Deploying with explicit gas limit...`);
-      
+
       let playerToken: PlayerTokenType;
       let tokenAddress: string;
-      
+
       try {
         playerToken = await PlayerToken.deploy(
           tokenName,
@@ -419,11 +476,15 @@ async function deployTokensForTeam(
           teamTokenAddress,
           { gasLimit: 5000000 } // 5M gas limit
         );
-        
-        console.log(`       📦 Deployment transaction sent: ${playerToken.deploymentTransaction()?.hash}`);
+
+        console.log(
+          `       📦 Deployment transaction sent: ${
+            playerToken.deploymentTransaction()?.hash
+          }`
+        );
         await playerToken.waitForDeployment();
         tokenAddress = await playerToken.getAddress();
-        
+
         console.log(`       ✅ Contract deployed to: ${tokenAddress}`);
       } catch (deployError) {
         console.error(`       ❌ Deployment failed:`, deployError);
@@ -453,7 +514,11 @@ async function deployTokensForTeam(
       // Mint tokens to the contract itself
       console.log(`       🪙 Minting tokens to contract...`);
       try {
-        const mintTx = await playerToken.mint(tokenAddress, config.initialSupply, { gasLimit: 1000000 }); // 1M gas for minting
+        const mintTx = await playerToken.mint(
+          tokenAddress,
+          config.initialSupply,
+          { gasLimit: 1000000 }
+        ); // 1M gas for minting
         await mintTx.wait();
         console.log(`       ✅ Tokens minted to contract successfully`);
       } catch (mintError) {
@@ -464,10 +529,14 @@ async function deployTokensForTeam(
       // Fetch real player stats from API Football
       console.log(`       📊 Fetching real stats for ${fullName}...`);
       let stats: PlayerStats;
-      
+
       try {
-        const apiPlayerStats = await adapter.fetchPlayerStats(player.player, config.leagueId, config.season);
-        
+        const apiPlayerStats = await adapter.fetchPlayerStats(
+          player.player,
+          config.leagueId,
+          config.season
+        );
+
         if (apiPlayerStats && apiPlayerStats.statistics.length > 0) {
           const playerStats = apiPlayerStats.statistics[0];
           stats = {
@@ -495,10 +564,12 @@ async function deployTokensForTeam(
         stats = generateMockStats();
         console.log(`       ⚠️  Using mock stats (API call failed)`);
       }
-      
+
       console.log(`       📊 Updating player stats...`);
       try {
-        const statsTx = await playerToken.updatePlayerStats(stats, { gasLimit: 1000000 }); // 1M gas for stats update
+        const statsTx = await playerToken.updatePlayerStats(stats, {
+          gasLimit: 1000000,
+        }); // 1M gas for stats update
         await statsTx.wait();
         console.log(`       ✅ Player stats updated successfully`);
       } catch (statsError) {
@@ -519,7 +590,8 @@ async function deployTokensForTeam(
         nationality: player.nationality,
         age: player.age,
         deploymentTime: new Date().toISOString(),
-        blockNumber: (await playerToken.deploymentTransaction())?.blockNumber || 0
+        blockNumber:
+          (await playerToken.deploymentTransaction())?.blockNumber || 0,
       };
 
       deployedTokens.push(deploymentInfo);
@@ -532,7 +604,7 @@ async function deployTokensForTeam(
         position: player.position,
         deployedAt: new Date().toISOString(),
         tokenName: tokenName,
-        tokenSymbol: tokenSymbol
+        tokenSymbol: tokenSymbol,
       };
 
       console.log(`       ✅ Token deployed to: ${tokenAddress}`);
@@ -543,15 +615,20 @@ async function deployTokensForTeam(
       // Save registry periodically (every 5 deployments)
       if ((i + 1) % 5 === 0) {
         saveRegistry(registry, registryFile);
-        console.log(`       💾 Registry saved (${i + 1}/${players.length} players)`);
+        console.log(
+          `       💾 Registry saved (${i + 1}/${players.length} players)`
+        );
       }
 
       // Add delay between deployments and API calls
       await adapter.waitForRateLimit(2000);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`       ❌ Failed to deploy token for ${player.firstname} ${player.lastname}:`, errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(
+        `       ❌ Failed to deploy token for ${player.firstname} ${player.lastname}:`,
+        errorMessage
+      );
     }
   }
 
@@ -582,7 +659,7 @@ function generateMockStats(): PlayerStats {
  * Generate a token symbol from player name
  */
 function generateTokenSymbol(fullName: string): string {
-  const names = fullName.split(' ');
+  const names = fullName.split(" ");
   if (names.length >= 2) {
     // Use first letter of first name + first 2-3 letters of last name
     const firstName = names[0];
@@ -598,14 +675,16 @@ function generateTokenSymbol(fullName: string): string {
  * Validate player data for deployment
  */
 function validatePlayerForDeployment(player: Player): boolean {
-  return Boolean(player.player && 
-         player.firstname && 
-         player.lastname && 
-         player.teamname && 
-         player.position);
+  return Boolean(
+    player.player &&
+      player.firstname &&
+      player.lastname &&
+      player.teamname &&
+      player.position
+  );
 }
 
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
-}); 
+});

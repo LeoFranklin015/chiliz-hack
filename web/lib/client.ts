@@ -4,7 +4,7 @@ import { spicy } from "viem/chains";
 // Create public client that works on server and client
 export const client = createPublicClient({
   chain: spicy,
-  transport: http(),
+  transport: http("https://spicy-rpc.chiliz.com"),
 });
 
 // Safely create wallet client only in browser environment
