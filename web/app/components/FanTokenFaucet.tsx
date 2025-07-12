@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { teamFanTokens, teams } from "../../lib/const";
+import { teamFanTokens, teams, FANTOKEN_ABI } from "../../lib/const";
+import { walletClient } from "../../lib/client";
 
 interface FanTokenFaucetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedTeam: string;
   setSelectedTeam: (team: string) => void;
-  handleMint: () => void;
   loading?: boolean;
 }
 
@@ -17,9 +17,36 @@ const FanTokenFaucet: React.FC<FanTokenFaucetProps> = ({
   onOpenChange,
   selectedTeam,
   setSelectedTeam,
-  handleMint,
-  loading,
+  loading: loadingProp,
 }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleMint = async () => {
+    if (!selectedTeam || !walletClient) return;
+    setLoading(true);
+    try {
+      const [address] = await walletClient.getAddresses();
+      const contractAddress =
+        teamFanTokens[selectedTeam as keyof typeof teamFanTokens];
+      if (!contractAddress) throw new Error("No contract address for team");
+      // 1000 tokens, assuming 18 decimals
+      const amount = BigInt(1000) * BigInt(1e18);
+      const hash = await walletClient.writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: FANTOKEN_ABI,
+        functionName: "mint",
+        args: [address, amount],
+        account: address,
+      });
+      alert("Mint transaction sent! Hash: " + hash);
+      setLoading(false);
+      onOpenChange(false);
+    } catch (err: any) {
+      alert("Mint failed: " + (err?.message || err));
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-[#cf0a0a]/30 bg-zinc-900/95 shadow-2xl rounded-2xl w-full max-w-3xl p-0 overflow-hidden">
