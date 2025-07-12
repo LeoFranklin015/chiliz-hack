@@ -27,12 +27,32 @@ function useFootballSceneState() {
   return isFootballSceneActive
 }
 
+// Custom hook to detect scroll position and section
+function useScrollSection() {
+  const [currentSection, setCurrentSection] = useState(0)
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const windowHeight = window.innerHeight
+      const section = Math.floor(scrollY / windowHeight)
+      setCurrentSection(section)
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+  
+  return currentSection
+}
+
 export default function TopNav() {
   const pathname = usePathname()
   const isFootballSceneActive = useFootballSceneState()
+  const currentSection = useScrollSection()
   
-  // Hide navbar on landing page when FootballScene is active
-  if (pathname === "/" && isFootballSceneActive) {
+  // Hide navbar on landing page when in first section (FootballScene) or when FootballScene is active
+  if (pathname === "/" && (currentSection === 0 || isFootballSceneActive)) {
     return null
   }
 

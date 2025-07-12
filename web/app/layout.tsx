@@ -51,8 +51,10 @@ export default function RootLayout({
           {/* Navigation Bar - will be hidden on landing page by TopNav component */}
           <TopNav />
 
-          {/* Main content */}
-          <div className="relative z-10">{children}</div>
+          {/* Main content with conditional padding */}
+          <div className="relative z-10">
+            {children}
+          </div>
         </Provider>
       </body>
     </html>
