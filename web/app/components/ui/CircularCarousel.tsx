@@ -46,7 +46,7 @@ const CircularCarousel = React.forwardRef<
         {...props}
       >
         <div
-          className="relative"
+          className="relative h-full"
           style={{
             width: `${itemWidth}px`,
             height: `400px`, // let's assume a fixed height for cards
@@ -80,18 +80,18 @@ const CircularCarousel = React.forwardRef<
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-24 mt-10">
+        <div className="flex items-center gap-12 mt-24 bg-black ">
           <Button
             onClick={() => rotate("prev")}
-            className="z-10"
+            className="z-10 bg-black"
             variant="outline"
             size="icon"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Button
-            onClick={() => rotate("next")}
-            className="z-10"
+            onClick={() =>  rotate("next")}
+            className="z-10 bg-black"
             variant="outline"
             size="icon"
           >

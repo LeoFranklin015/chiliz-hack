@@ -14,6 +14,7 @@ import SalientFeaturesSection from "./components/SalientFeaturesSection"
 import TemplateNFTsSection from "./components/TemplateNFTsSection"
 import FeaturesSection from "./components/FeaturesSection"
 
+
 export default function Home() {
   const [showText, setShowText] = useState(false)
 
@@ -112,6 +113,7 @@ export default function Home() {
       <SalientFeaturesSection />
       <TemplateNFTsSection />
       <FeaturesSection />
+
     </>
   )
 }

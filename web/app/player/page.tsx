@@ -1,54 +1,61 @@
 "use client";
 import { CircularCarousel } from "../components/ui/CircularCarousel";
-import ModelViewer from "../components/ui/ModelViewer";
+import ProfileCard from "../components/ui/ProfileCard";
 
 interface PlayerCard {
   id: number;
   name: string;
-  model: string;
+  title: string;
+  avatar: string;
+  handle: string;
+  status: string;
 }
 
 const players: PlayerCard[] = [
   {
     id: 1,
     name: "Lionel Messi",
-    model: "/messi.glb",
+    title: "Forward",
+    avatar: "https://i.imgur.com/1Y2WwX2.jpeg",
+    handle: "leomessi",
+    status: "Online",
   },
   {
     id: 2,
     name: "Cristiano Ronaldo",
-    model: "/ronaldo.glb",
+    title: "Forward",
+    avatar: "https://i.imgur.com/tX0P2Ct.jpeg",
+    handle: "cristiano",
+    status: "Online",
   },
   {
     id: 3,
     name: "Neymar Jr",
-    model: "/messi.glb", // Placeholder
+    title: "Forward",
+    avatar: "https://i.imgur.com/MiU8N3p.jpeg",
+    handle: "neymarjr",
+    status: "Online",
   },
 ];
 
 export default function PlayerPage() {
   return (
     <main
-      className="flex min-h-screen items-center justify-start overflow-hidden bg-[#0d0d0d] text-white"
-      style={{
-        backgroundImage: `radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.3), transparent)`,
-      }}
+      className="flex min-h-screen items-center justify-start overflow-hidden  text-white"
+      
     >
       <div className="w-1/2">
         <CircularCarousel
-          itemWidth={280}
+          itemWidth={320}
           items={players.map((player) => (
-            <div
+            <ProfileCard
               key={player.id}
-              className="relative flex h-[400px] w-[280px] flex-col justify-end overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-center backdrop-blur-md"
-            >
-              <ModelViewer modelPath={player.model} />
-              <div className="z-10 w-full bg-black/30 p-4 backdrop-blur-sm">
-                <h2 className="text-xl font-bold tracking-wider text-white">
-                  {player.name}
-                </h2>
-              </div>
-            </div>
+              avatarUrl={player.avatar}
+              name={player.name}
+              title={player.title}
+              handle={player.handle}
+              status={player.status}
+            />
           ))}
         />
       </div>

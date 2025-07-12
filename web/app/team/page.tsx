@@ -118,7 +118,7 @@ export default function TeamSelection() {
                 {teams.map((team, idx) => {
                   const path = slicePath(idx, totalTeams, 290, 200, 300, 300);
                   const imgPos = logoPosition(idx, totalTeams, 250, 64);
-                  return (
+              return (
                     <g
                       key={team.id}
                       onMouseEnter={() => setSelectedIndex(idx)}
@@ -163,23 +163,23 @@ export default function TeamSelection() {
                   />
                 )}
               </svg>
-              {/* Navigation arrows */}
+      {/* Navigation arrows */}
               <div className="flex items-center gap-6 mt-8">
-                <button
-                  onClick={selectPrev}
-                  aria-label="Previous Team"
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
-                >
-                  <ArrowLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={selectNext}
-                  aria-label="Next Team"
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
-                >
-                  <ArrowRight className="w-6 h-6" />
-                </button>
-              </div>
+        <button
+          onClick={selectPrev}
+          aria-label="Previous Team"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <button
+          onClick={selectNext}
+          aria-label="Next Team"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-colors"
+        >
+          <ArrowRight className="w-6 h-6" />
+        </button>
+      </div>
             </div>
 
             {/* Right: Team name and Explore Player button */}
