@@ -5,6 +5,7 @@ import { Button } from "./button"
 import { Trophy } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { CustomConnectButton } from "../ConnectButton"
 
 // Custom hook to detect FootballScene state
 function useFootballSceneState() {
@@ -67,7 +68,7 @@ export default function TopNav() {
             boxShadow: "0 0 15px rgba(207, 10, 10, 0.2), inset 0 0 8px rgba(207, 10, 10, 0.1)",
           }}
         >
-          <span className="text-lg font-mono font-semibold text-white tracking-widest"> ScoreX</span>
+          <span className="text-lg font-mono font-semibold text-white tracking-widest"> SCOREZ</span>
         </div>
 
         {/* Right Section: Navigation Links and Play Now Button */}
@@ -100,18 +101,10 @@ export default function TopNav() {
           </div>
 
           {/* Connect Button with custom shape */}
-          <Button
-            className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group ml-[-10px]" // Adjusted margin to overlap
-            style={{
-              background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
-              clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
-              border: "1px solid rgba(207, 10, 10, 0.5)",
-              boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
-            }}
-          >
-            <span className="relative z-10">Connect</span>
-            <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-          </Button>
+          
+          
+ <CustomConnectButton />
+            
         </div>
       </div>
     </nav>

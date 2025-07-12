@@ -1,6 +1,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Image from "next/image";
 import Link from "next/link";
+
 export const CustomConnectButton = () => {
   return (
     <ConnectButton.Custom>
@@ -38,9 +39,16 @@ export const CustomConnectButton = () => {
                   <button
                     onClick={openConnectModal}
                     type="button"
-                    className="px-2 py-3 bg-green-600 text-black rounded pixelated-border hover:bg-green-500 transition-colors flex items-center"
+                      className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                    style={{
+                      background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                      clipPath: "polygon(8% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                      border: "1px solid rgba(207, 10, 10, 0.5)",
+                      boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                    }}
                   >
-                    Connect Wallet
+                    <span className="relative z-10">Connect Wallet</span>
+                    <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </button>
                 );
               }
@@ -49,71 +57,104 @@ export const CustomConnectButton = () => {
                   <button
                     onClick={openChainModal}
                     type="button"
-                    className="px-2 py-3 bg-red-600 text-black rounded pixelated-border hover:bg-red-500 transition-colors flex items-center"
+                    className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                    style={{
+                      background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                      clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                      border: "1px solid rgba(207, 10, 10, 0.5)",
+                      boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                    }}
                   >
-                    Wrong network
+                    <span className="relative z-10">Wrong network</span>
+                    <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </button>
                 );
               }
               return (
-                <div className="flex items-center gap-10">
+                <div className="flex items-center gap-4">
                   <Link href="/markets/create">
                     <button
-                      style={{ display: "flex", alignItems: "center" }}
                       type="button"
-                      className="flex items-center gap-3 px-2 py-2  hover:text-black rounded pixelated-border hover:bg-yellow-500 transition-colors text-green-500"
+                      className="relative h-10 px-6 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                      style={{
+                        background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                        clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                        border: "1px solid rgba(207, 10, 10, 0.5)",
+                        boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                      }}
                     >
-                      Create Market
+                      <span className="relative z-10">Create Market</span>
+                      <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                     </button>
                   </Link>
                   <Link href="/markets/mymarkets">
                     <button
-                      style={{ display: "flex", alignItems: "center" }}
                       type="button"
-                      className="flex items-center gap-3 px-2 py-2  hover:text-black rounded pixelated-border hover:bg-yellow-500 transition-colors text-green-500"
+                      className="relative h-10 px-6 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                      style={{
+                        background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                        clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                        border: "1px solid rgba(207, 10, 10, 0.5)",
+                        boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                      }}
                     >
-                      My Markets
+                      <span className="relative z-10">My Markets</span>
+                      <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                     </button>
                   </Link>
                   <button
                     onClick={openChainModal}
-                    style={{ display: "flex", alignItems: "center" }}
                     type="button"
-                    className="flex items-center gap-3 px-2 py-2  hover:text-black rounded pixelated-border hover:bg-yellow-500 transition-colors text-green-500"
+                    className="relative h-10 px-6 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group flex items-center gap-2"
+                    style={{
+                      background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                      clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                      border: "1px solid rgba(207, 10, 10, 0.5)",
+                      boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                    }}
                   >
                     {chain.hasIcon && (
                       <div
                         style={{
                           background: chain.iconBackground,
-                          width: 30,
-                          height: 30,
+                          width: 20,
+                          height: 20,
                           borderRadius: 999,
                           overflow: "hidden",
-                          marginRight: 4,
                         }}
                       >
                         {chain.iconUrl && (
                           <Image
                             alt={chain.name ?? "Chain icon"}
                             src={chain.iconUrl}
-                            style={{ width: 30, height: 30 }}
-                            width={30}
-                            height={30}
+                            style={{ width: 20, height: 20 }}
+                            width={20}
+                            height={20}
                           />
                         )}
                       </div>
                     )}
-                    {chain.name}
+                    <span className="relative z-10">{chain.name}</span>
+                    <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </button>
                   <button
                     onClick={openAccountModal}
                     type="button"
-                    className="px-2 py-3 bg-green-600 text-black rounded pixelated-border hover:bg-green-500 transition-colors flex items-center"
+                    className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
+                    style={{
+                      background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+                      clipPath: "polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                      border: "1px solid rgba(207, 10, 10, 0.5)",
+                      boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
+                    }}
                   >
-                    {account.displayName}
-                    {account.displayBalance
-                      ? ` (${account.displayBalance})`
-                      : ""}
+                    <span className="relative z-10">
+                      {account.displayName}
+                      {account.displayBalance
+                        ? ` (${account.displayBalance})`
+                        : ""}
+                    </span>
+                    <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </button>
                 </div>
               );
