@@ -3,7 +3,6 @@
 import "@rainbow-me/rainbowkit/styles.css";
 import {
   connectorsForWallets,
-  getDefaultConfig,
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import { createConfig, WagmiProvider } from "wagmi";
