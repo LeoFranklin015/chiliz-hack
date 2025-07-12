@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { CircularCarousel } from "../components/ui/CircularCarousel";
 import ProfileCard from "../components/ui/ProfileCard";
 import PerformancePredictionGraph from "../components/PerformancePredictionGraph";
+import Loader from "../components/Loader";
 import { useSearchParams } from "next/navigation";
 
 interface PlayerCard {
@@ -187,14 +188,7 @@ export default function PlayerPage() {
   }, [selectedPlayer]);
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center text-white bg-black">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-zinc-400">Loading players...</p>
-        </div>
-      </main>
-    );
+    return <Loader size="lg" />;
   }
 
   if (error) {

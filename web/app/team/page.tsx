@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Loader from "../components/Loader";
 
 // helper to convert deg to rad
 const deg2rad = (deg: number) => (deg * Math.PI) / 180;
@@ -114,7 +115,7 @@ export default function TeamSelection() {
       <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522509589783-7b2a85a04e9a?auto=format&fit=crop&w=1920&q=60')] bg-cover opacity-10 mix-blend-soft-light" />
 
       <div className="relative z-10 flex flex-col w-full  items-center justify-center min-h-screen">
-        {loading && <div className="text-lg">Loading teams...</div>}
+        {loading && <Loader size="lg" />}
         {error && <div className="text-red-500">{error}</div>}
         {!loading && !error && teams.length > 0 && (
           <div className="flex flex-col items-center justify-center w-full max-w-6xl">
