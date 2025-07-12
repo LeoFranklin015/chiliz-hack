@@ -1,11 +1,11 @@
-"use client"
-import { CircularCarousel } from "../components/ui/CircularCarousel"
-import ModelViewer from "../components/ui/ModelViewer"
+"use client";
+import { CircularCarousel } from "../components/ui/CircularCarousel";
+import ModelViewer from "../components/ui/ModelViewer";
 
 interface PlayerCard {
-  id: number
-  name: string
-  model: string
+  id: number;
+  name: string;
+  model: string;
 }
 
 const players: PlayerCard[] = [
@@ -23,9 +23,8 @@ const players: PlayerCard[] = [
     id: 3,
     name: "Neymar Jr",
     model: "/messi.glb", // Placeholder
-  }
-
-]
+  },
+];
 
 export default function PlayerPage() {
   return (
@@ -54,5 +53,5 @@ export default function PlayerPage() {
         />
       </div>
     </main>
-  )
-} 
+  );
+}
