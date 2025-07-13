@@ -19,7 +19,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: "ScoreX",
+    appName: "ScoreZ",
     projectId: process.env.NEXT_PUBLIC_PROJECT_ID || "",
   }
 );

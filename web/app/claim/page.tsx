@@ -22,8 +22,7 @@ interface Token {
     image: string;
     tokenName: string;
     tokenSymbol: string;
-    deployedAt: string;
-// Added for token balance
+        deployedAt: string;
   };
 }
 

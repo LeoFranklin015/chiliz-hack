@@ -1,150 +1,113 @@
 import React from "react";
 import CardSwap, { Card } from "./ui/cardswap";
-import { CustomConnectButton } from "./ConnectButton";
+import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
+import { ShieldCheck, TrendingUp, Trophy, BadgeDollarSign } from "lucide-react";
 
 const FeaturesSection = () => {
   return (
-    <section className="relative min-h-screen   flex items-center justify-center py-20">
+    <section className="relative min-h-screen flex items-center justify-center py-20 ">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Left side - Text content */}
+          {/* Left side - Platform description and feature cards */}
           <div className="space-y-8">
             <div>
               <h2 className="text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
-                Revolutionary
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-lime-400">
-                  Gaming Experience
+                Performance-Based
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">
+                  Player Tokenization
                 </span>
-                <div className="flex justify-end">
-                 
-                </div>
               </h2>
-              <p className="text-xl text-gray-300 leading-relaxed">
-                ScoreX transforms fantasy sports with performance-driven
-                tokenization. No speculation, no pump-and-dump - just pure skill
-                and real rewards.
+              <p className="text-xl text-zinc-200 leading-relaxed">
+                scoreZ revolutionizes fan engagement through seasonal player tokens built on Chiliz Chain. 
+                Back players based on real performance stats, not just popularity. Where every goal, assist, 
+                and match fuels a dynamic, on-chain fan economy.
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-cyan-400/20 rounded-lg p-6">
-                <div className="text-cyan-400 text-2xl font-bold mb-2">
-                  24/7
-                </div>
-                <div className="text-white text-sm font-medium mb-1">
-                  Live Trading
-                </div>
-                <div className="text-gray-400 text-xs">
-                  Real-time market dynamics
-                </div>
+            <div className="mt-8 grid grid-cols-2 gap-4 max-w-md">
+              {/* Mint */}
+              <div className="flex items-center gap-3 bg-zinc-900/70 border border-red-700 rounded-lg px-4 py-3">
+                <BadgeDollarSign className="text-red-500" size={22} />
+                <span className="text-sm text-zinc-200">Mint PFTs</span>
               </div>
-
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-lime-400/20 rounded-lg p-6">
-                <div className="text-lime-400 text-2xl font-bold mb-2">
-                  100%
-                </div>
-                <div className="text-white text-sm font-medium mb-1">
-                  Performance Based
-                </div>
-                <div className="text-gray-400 text-xs">
-                  Zero speculation trading
-                </div>
+              {/* Trade */}
+              <div className="flex items-center gap-3 bg-zinc-900/70 border border-red-700 rounded-lg px-4 py-3">
+                <TrendingUp className="text-red-500" size={22} />
+                <span className="text-sm text-zinc-200">24/7 Trade</span>
+              </div>
+              {/* Earn */}
+              <div className="flex items-center gap-3 bg-zinc-900/70 border border-red-700 rounded-lg px-4 py-3">
+                <Trophy className="text-red-500" size={22} />
+                <span className="text-sm text-zinc-200">Season Rewards</span>
+              </div>
+              {/* Secure */}
+              <div className="flex items-center gap-3 bg-zinc-900/70 border border-red-700 rounded-lg px-4 py-3">
+                <ShieldCheck className="text-red-500" size={22} />
+                <span className="text-sm text-zinc-200">On-Chain Secure</span>
               </div>
             </div>
           </div>
-
           {/* Right side - CardSwap component */}
-          <div className="relative h-[600px]">
+          <div className="relative h-[600px] mt-[-200px] mr-[100px]">
             <CardSwap
               width={350}
               height={450}
               cardDistance={60}
               verticalDistance={70}
-              delay={4000}
-              pauseOnHover={true}
-              skewAmount={8}
-              easing="elastic"
+              delay={3500}
+              pauseOnHover={false}
+              skewAmount={6}
+              easing="linear"
             >
-              <Card className="bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border-cyan-400/30 backdrop-blur-sm">
+              {/* Card 1 */}
+              <Card className="bg-zinc-900/80 border border-red-700 backdrop-blur-sm">
                 <div className="p-8 h-full flex flex-col justify-between">
                   <div>
-                    <div className="w-16 h-16 bg-cyan-400 rounded-full flex items-center justify-center mb-6">
-                      <span className="text-2xl">⚡</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      Performance Trading
-                    </h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      Player token values fluctuate based on real match
-                      performance metrics, not market speculation. Every goal,
-                      assist, and save matters.
+                    <h3 className="text-2xl font-bold text-white mb-3">Mint PFTs</h3>
+                    <p className="text-zinc-300 text-sm leading-relaxed">
+                      Player Fan Tokens minted via club tokens. Seasonal, expiring, performance-driven.
                     </p>
                   </div>
-                  <div className="text-cyan-400 text-sm font-semibold">
-                    Real-time price updates
-                  </div>
+                  <span className="text-red-500 text-sm font-semibold">#PlayerTokens</span>
                 </div>
               </Card>
 
-              <Card className="bg-gradient-to-br from-lime-500/20 to-green-600/20 border-lime-400/30 backdrop-blur-sm">
+              {/* Card 2 */}
+              <Card className="bg-zinc-900/80 border border-red-700 backdrop-blur-sm">
                 <div className="p-8 h-full flex flex-col justify-between">
                   <div>
-                    <div className="w-16 h-16 bg-lime-400 rounded-full flex items-center justify-center mb-6">
-                      <span className="text-2xl">🏆</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      Season Rewards
-                    </h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      At season end, the total market pool is distributed
-                      between token holders and actual players. Everyone wins
-                      when talent succeeds.
+                    <h3 className="text-2xl font-bold text-white mb-3">PvP Battles</h3>
+                    <p className="text-zinc-300 text-sm leading-relaxed">
+                      Stake player tokens head-to-head. Best performance wins the pool.
                     </p>
                   </div>
-                  <div className="text-lime-400 text-sm font-semibold">
-                    Fair reward distribution
-                  </div>
+                  <span className="text-red-500 text-sm font-semibold">#StakeAndWin</span>
                 </div>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 border-purple-400/30 backdrop-blur-sm">
+              {/* Card 3 */}
+              <Card className="bg-zinc-900/80 border border-red-700 backdrop-blur-sm">
                 <div className="p-8 h-full flex flex-col justify-between">
                   <div>
-                    <div className="w-16 h-16 bg-purple-400 rounded-full flex items-center justify-center mb-6">
-                      <span className="text-2xl">📈</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      Live Markets
-                    </h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      Trade during matches with instant price updates. Watch
-                      your portfolio grow as your players perform on the field.
+                    <h3 className="text-2xl font-bold text-white mb-3">Token Utility</h3>
+                    <p className="text-zinc-300 text-sm leading-relaxed">
+                      Buy tickets, exclusive merch, meet players. Burn for protocol rewards.
                     </p>
                   </div>
-                  <div className="text-purple-400 text-sm font-semibold">
-                    Instant market reactions
-                  </div>
+                  <span className="text-red-500 text-sm font-semibold">#FanAccess</span>
                 </div>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-500/20 to-red-600/20 border-orange-400/30 backdrop-blur-sm">
+              {/* Card 4 */}
+              <Card className="bg-zinc-900/80 border border-red-700 backdrop-blur-sm">
                 <div className="p-8 h-full flex flex-col justify-between">
                   <div>
-                    <div className="w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center mb-6">
-                      <span className="text-2xl">⚖️</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      Fair Economics
-                    </h3>
-                    <p className="text-gray-300 leading-relaxed">
-                      No pump-and-dump schemes or artificial inflation. Pure
-                      performance-driven economics that reward skill and
-                      knowledge.
+                    <h3 className="text-2xl font-bold text-white mb-3">Fair Rewards</h3>
+                    <p className="text-zinc-300 text-sm leading-relaxed">
+                      50% to fans, 30% to protocol, 20% to players. Performance pays everyone.
                     </p>
                   </div>
-                  <div className="text-orange-400 text-sm font-semibold">
-                    Transparent pricing model
-                  </div>
+                  <span className="text-red-500 text-sm font-semibold">#AlignedIncentives</span>
                 </div>
               </Card>
             </CardSwap>
@@ -155,4 +118,59 @@ const FeaturesSection = () => {
   );
 };
 
+// HowItWorksSection updated for scoreZ
+const HowItWorksSection = () => {
+  const router = useRouter();
+  return (
+    <section className="w-full py-20 flex items-center justify-center h-screen">
+      <div className="container mx-auto px-6 max-w-3xl">
+        <div className="border border-red-700 rounded-2xl bg-zinc-900/70 shadow-lg p-10 flex flex-col items-center">
+          <h2 className="text-3xl font-bold text-white mb-6 text-center tracking-tight">How scoreZ Works</h2>
+
+          {/* quick pillars */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="flex flex-col items-center gap-2 bg-zinc-900/70 border border-red-700 rounded-lg p-3">
+              <BadgeDollarSign className="text-red-500" size={20} />
+              <span className="text-xs text-zinc-200">Mint</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 bg-zinc-900/70 border border-red-700 rounded-lg p-3">
+              <TrendingUp className="text-red-500" size={20} />
+              <span className="text-xs text-zinc-200">Trade</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 bg-zinc-900/70 border border-red-700 rounded-lg p-3">
+              <Trophy className="text-red-500" size={20} />
+              <span className="text-xs text-zinc-200">Rewards</span>
+            </div>
+            <div className="flex flex-col items-center gap-2 bg-zinc-900/70 border border-red-700 rounded-lg p-3">
+              <ShieldCheck className="text-red-500" size={20} />
+              <span className="text-xs text-zinc-200">Secure</span>
+            </div>
+          </div>
+          <ol className="space-y-6 text-zinc-200 text-lg w-full max-w-xl mx-auto mb-10">
+            <li className="flex items-center gap-4">
+              <span className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-black font-bold">1</span>
+              Hold club tokens to mint Player Fan Tokens (PFTs) for your favorite athletes.
+            </li>
+            <li className="flex items-center gap-4">
+              <span className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-black font-bold">2</span>
+              Trade PFTs or stake in PvP battles. Token values reflect real match performance.
+            </li>
+            <li className="flex items-center gap-4">
+              <span className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-black font-bold">3</span>
+              Use tokens for exclusive access or burn for rewards before season expiry.
+            </li>
+          </ol>
+          <Button
+            className="w-full max-w-xs mt-2"
+            onClick={() => router.push('/leagues')}
+          >
+            Join scoreZ
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 export default FeaturesSection;
+export { HowItWorksSection };

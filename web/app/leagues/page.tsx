@@ -88,7 +88,7 @@ export default function LeaguesPage() {
   const filteredLeagues = selectedTier === "All" ? leagues : leagues.filter((league) => league.tier === selectedTier)
 
   return (
-    <div className="min-h-screen  text-white">
+    <div className="min-h-screen  text-white mt-12">
       <div className="flex justify-center mb-16 relative z-10 ">
         <div className="flex space-x-1 bg-zinc-900/80 rounded-2xl p-1 backdrop-blur-md border border-zinc-800/50 shadow-2xl">
           {tiers.map((tier) => (
