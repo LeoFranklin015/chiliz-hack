@@ -1,236 +1,127 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
-import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "../components/ui/form";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ShoppingBag,
-  DollarSign,
-  Users,
-  Upload,
-  Tag,
-  Loader2,
-} from "lucide-react";
-import { usePinataUpload } from "../test/usePinataUpload";
+import { motion } from "framer-motion";
+import { ShoppingBag, DollarSign, Users, Loader2 } from "lucide-react";
 import { MerchContractAddress, MerchContractABI } from "../../lib/const";
-import { walletClient, client } from "../../lib/client";
+import { client } from "../../lib/client";
 import { useAccount } from "wagmi";
 
-// Merchandise type
+// Merchandise type based on the smart contract MerchInfo struct
 type Merchandise = {
   id: string;
   name: string;
-  description: string;
+  ipfsMetadataCID: string;
   price: string;
-  category: string;
-  player: string;
-  image: string;
-  stock: string;
+  supply: string;
+  minted: string;
+  seller: string;
+  paymentToken: string;
+  image?: string;
+  description?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string;
+  }>;
 };
 
 const MarketplacePage = () => {
   const [merchandise, setMerchandise] = useState<Merchandise[]>([]);
-  const [viewMode, setViewMode] = useState<"user" | "player">("user");
-  const [isSubmittingMerch, setIsSubmittingMerch] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
 
-  // Initialize Pinata upload hook
-  const {
-    selectedFile,
-    uploadedCID,
-    isUploading,
-    error: uploadError,
-    fileValidation,
-    uploadToPinata,
-    handleFileSelect,
-    getGatewayUrl,
-  } = usePinataUpload();
-
-  const form = useForm({
-    defaultValues: {
-      name: "",
-      description: "",
-      price: "",
-      category: "",
-      stock: "",
-      image: "",
-    },
-  });
-
-  // Sample merchandise data
-  const sampleMerchandise: Merchandise[] = [
-    {
-      id: "1",
-      name: "Messi Signature Jersey",
-      description: "Official Barcelona home jersey signed by Lionel Messi",
-      price: "299.99",
-      category: "jerseys",
-      player: "Lionel Messi",
-      image:
-        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
-      stock: "10",
-    },
-    {
-      id: "2",
-      name: "Ronaldo Training Kit",
-      description:
-        "Limited edition training kit from Cristiano Ronaldo's collection",
-      price: "199.99",
-      category: "training",
-      player: "Cristiano Ronaldo",
-      image:
-        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop",
-      stock: "5",
-    },
-  ];
-
-  const categories = [
-    { id: "jerseys", name: "Jerseys" },
-    { id: "training", name: "Training Gear" },
-    { id: "footwear", name: "Footwear" },
-    { id: "accessories", name: "Accessories" },
-  ];
-
-  async function onSubmit(data: any) {
-    if (!address || !walletClient) {
-      alert("Please connect your wallet first!");
-      return;
-    }
-
-    if (!selectedFile) {
-      alert("Please select an image for your merchandise!");
-      return;
-    }
-
-    setIsSubmittingMerch(true);
-
+  // Function to fetch all merchandise from the smart contract
+  const fetchAllMerch = async () => {
     try {
-      // Step 1: Upload image to Pinata
-      console.log("Uploading image to Pinata...");
-      const imageCID = await uploadToPinata();
+      setIsLoading(true);
+      setError(null);
 
-      if (!imageCID) {
-        throw new Error("Failed to upload image to Pinata");
-      }
+      console.log("Fetching merchandise from contract...");
 
-      // Step 2: Create metadata JSON
-      const metadata = {
-        name: data.name,
-        description: data.description,
-        image: `ipfs://${imageCID}`,
-        attributes: [
-          {
-            trait_type: "Category",
-            value: data.category,
-          },
-          {
-            trait_type: "Price",
-            value: `${data.price} CHZ`,
-          },
-          {
-            trait_type: "Stock",
-            value: data.stock,
-          },
-        ],
-      };
-
-      // Step 3: Upload metadata to Pinata
-      console.log("Uploading metadata to Pinata...");
-      const metadataBlob = new Blob([JSON.stringify(metadata)], {
-        type: "application/json",
-      });
-      const metadataFile = new File([metadataBlob], "metadata.json", {
-        type: "application/json",
-      });
-
-      // Upload metadata using the API
-      const formData = new FormData();
-      formData.append("file", metadataFile);
-
-      const metadataResponse = await fetch("/api/upload-to-pinata", {
-        method: "POST",
-        body: formData,
-      });
-
-      const metadataResult = await metadataResponse.json();
-
-      if (!metadataResult.success) {
-        throw new Error("Failed to upload metadata to Pinata");
-      }
-
-      const metadataCID = metadataResult.IpfsHash || metadataResult.cid;
-      console.log("Metadata uploaded with CID:", metadataCID);
-
-      // Step 4: Create merchandise on blockchain
-      console.log("Creating merchandise on blockchain...");
-
-      // Convert form values to proper types
-      const price = BigInt(data.price);
-      const supply = BigInt(data.stock);
-      // For now, using a default payment token address (you might want to let user choose)
-      const paymentToken =
-        "0x0000000000000000000000000000000000000000" as `0x${string}`; // ETH or native token
-
-      console.log("Creating merchandise with params:", {
-        name: data.name,
-        ipfsMetadataCID: metadataCID,
-        price,
-        supply,
-        paymentToken,
-      });
-
-      // Call the createMerch function on the merchandise contract
-      const hash = await walletClient.writeContract({
+      // Call the listAllMerch function from the smart contract
+      const result = await client.readContract({
         address: MerchContractAddress as `0x${string}`,
         abi: MerchContractABI,
-        functionName: "createMerch",
-        args: [data.name, metadataCID, price, supply, paymentToken],
-        account: address as `0x${string}`,
+        functionName: "listAllMerch",
       });
 
-      console.log("Transaction hash:", hash);
+      console.log("Raw contract result:", result);
 
-      // Wait for transaction confirmation
-      const receipt = await client.waitForTransactionReceipt({ hash });
-      console.log("Transaction confirmed:", receipt);
+      // Transform the result to match our Merchandise type
+      const transformedMerch = await Promise.all(
+        (result as any[]).map(async (item: any) => {
+          let imageUrl = "";
+          let description = "Merchandise item";
+          let attributes: any[] = [];
 
-      // Add to local state for immediate UI feedback
-      const newMerchandise: Merchandise = {
-        id: Date.now().toString(),
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        category: data.category,
-        player: "Your Name", // This would be the logged-in player's name
-        image: getGatewayUrl(imageCID),
-        stock: data.stock,
-      };
-      setMerchandise((prev) => [...prev, newMerchandise]);
+          try {
+            // Fetch metadata from IPFS
+            const metadataUrl = `https://gateway.pinata.cloud/ipfs/${item.ipfsMetadataCID}`;
+            const metadataResponse = await fetch(metadataUrl);
 
-      // Reset form
-      form.reset();
+            if (metadataResponse.ok) {
+              const metadata = await metadataResponse.json();
+              console.log(
+                "Metadata for item",
+                item.id.toString(),
+                ":",
+                metadata
+              );
 
-      alert("Merchandise created successfully!");
+              // Extract image CID from metadata
+              if (metadata.image) {
+                // Handle both ipfs:// and direct CID formats
+                const imageCID = metadata.image.replace("ipfs://", "");
+                imageUrl = `https://gateway.pinata.cloud/ipfs/${imageCID}`;
+              }
+
+              // Extract description and attributes
+              description = metadata.description || "Merchandise item";
+              attributes = metadata.attributes || [];
+            }
+          } catch (metadataError) {
+            console.error(
+              "Error fetching metadata for item",
+              item.id.toString(),
+              ":",
+              metadataError
+            );
+            // Fallback to placeholder if metadata fetch fails
+            imageUrl = "/api/placeholder/400/300";
+          }
+
+          return {
+            id: item.id.toString(),
+            name: item.name,
+            ipfsMetadataCID: item.ipfsMetadataCID,
+            price: item.price.toString(),
+            supply: item.supply.toString(),
+            minted: item.minted.toString(),
+            seller: item.seller,
+            paymentToken: item.paymentToken,
+            image: imageUrl,
+            description: description,
+            attributes: attributes,
+          };
+        })
+      );
+
+      console.log("Transformed merchandise:", transformedMerch);
+      setMerchandise(transformedMerch);
     } catch (error) {
-      console.error("Error creating merchandise:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      alert(`Error creating merchandise: ${errorMessage}`);
+      console.error("Error fetching merchandise:", error);
+      setError("Failed to fetch merchandise. Please try again.");
     } finally {
-      setIsSubmittingMerch(false);
+      setIsLoading(false);
     }
-  }
+  };
+
+  // Fetch merchandise on component mount
+  useEffect(() => {
+    fetchAllMerch();
+  }, []);
 
   return (
     <div className="min-h-screen text-white relative overflow-hidden">
@@ -268,327 +159,161 @@ const MarketplacePage = () => {
           </p>
         </motion.div>
 
-        {/* View Mode Toggle */}
+        {/* Refresh Button */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="flex justify-center mb-8"
         >
-          <div className="flex space-x-1 bg-zinc-900/80 rounded-2xl p-1 backdrop-blur-md border border-zinc-800/50 shadow-2xl">
-            <button
-              onClick={() => setViewMode("user")}
-              className={`px-8 py-3 rounded-xl font-mono font-medium tracking-wide uppercase transition-all duration-300 ${
-                viewMode === "user"
-                  ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-              }`}
-            >
-              Shop
-            </button>
-            <button
-              onClick={() => setViewMode("player")}
-              className={`px-8 py-3 rounded-xl font-mono font-medium tracking-wide uppercase transition-all duration-300 ${
-                viewMode === "player"
-                  ? "bg-red-600 text-white shadow-lg shadow-red-500/25"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-              }`}
-            >
-              Sell
-            </button>
-          </div>
+          <Button
+            onClick={fetchAllMerch}
+            disabled={isLoading}
+            className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-mono font-medium tracking-wide uppercase transition-all duration-300 shadow-lg shadow-red-500/25"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Refresh Merchandise"
+            )}
+          </Button>
         </motion.div>
 
-        {/* Create Form (Player Mode) */}
-        {viewMode === "player" && (
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-[#cf0a0a] animate-spin mx-auto mb-4" />
+              <p className="text-zinc-300 text-lg">Loading merchandise...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <p className="text-red-400 text-lg mb-4">{error}</p>
+              <Button
+                onClick={fetchAllMerch}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Merchandise Grid */}
+        {!isLoading && !error && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="max-w-2xl mx-auto mb-16"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            <div className="bg-zinc-900/95 border border-[#cf0a0a]/30 shadow-2xl rounded-2xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black text-[#cf0a0a] gaming-text">
-                    List Merchandise
-                  </h2>
-                  <p className="text-zinc-400 text-sm mt-1">
-                    Add your merchandise to the store
-                  </p>
-                </div>
+            {merchandise.length === 0 ? (
+              <div className="col-span-full text-center py-20">
+                <ShoppingBag className="w-16 h-16 text-zinc-500 mx-auto mb-4" />
+                <p className="text-zinc-400 text-lg">
+                  No merchandise available yet.
+                </p>
+                <p className="text-zinc-500 text-sm mt-2">
+                  Check back later for new items!
+                </p>
               </div>
-
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                          <Tag className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>Product Name</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. Signed Match Jersey"
-                            className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
-                            {...field}
+            ) : (
+              merchandise.map(
+                (item) => (
+                  console.log(item),
+                  (
+                    <Card
+                      key={item.id}
+                      className="bg-zinc-900/95 border-zinc-800/50 hover:border-[#cf0a0a]/50 transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm shadow-xl overflow-hidden group"
+                    >
+                      <CardContent className="p-0">
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={item.image || "/api/placeholder/400/300"}
+                            alt={item.name}
+                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                          <span>Description</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your product..."
-                            className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm resize-none"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                            <DollarSign className="w-4 h-4 text-[#cf0a0a]" />
-                            <span>Price</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              step="any"
-                              placeholder="e.g. 299.99"
-                              className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="stock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                            <Users className="w-4 h-4 text-[#cf0a0a]" />
-                            <span>Stock</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={1}
-                              placeholder="e.g. 10"
-                              className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                          <Tag className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>Category</span>
-                        </FormLabel>
-                        <FormControl>
-                          <select
-                            {...field}
-                            className="w-full bg-zinc-800/50 border-zinc-600 text-white rounded-xl backdrop-blur-sm px-4 py-3"
-                          >
-                            <option value="">Select Category</option>
-                            {categories.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Image Upload */}
-                  <FormField
-                    control={form.control}
-                    name="image"
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormItem>
-                        <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
-                          <Upload className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>Product Image</span>
-                        </FormLabel>
-                        <FormControl>
-                          <div className="space-y-4">
-                            <div className="flex flex-col items-center justify-center w-full">
-                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-700/50 transition-all duration-300">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                  <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                                  <p className="mb-2 text-sm text-zinc-400">
-                                    <span className="font-bold">
-                                      Click to upload
-                                    </span>{" "}
-                                    or drag and drop
-                                  </p>
-                                  <p className="text-xs text-zinc-500">
-                                    PNG, JPG, GIF or WebP (MAX. 10MB)
-                                  </p>
-                                </div>
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    if (e.target.files && e.target.files[0]) {
-                                      handleFileSelect(e.target.files[0]);
-                                    }
-                                  }}
-                                  disabled={isUploading}
-                                  accept="image/*"
-                                  {...field}
-                                />
-                              </label>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <div className="flex items-center justify-between text-white">
+                              <span className="text-sm font-medium bg-[#cf0a0a]/80 px-2 py-1 rounded-md">
+                                {item.minted}/{item.supply} sold
+                              </span>
+                              <span className="text-lg font-bold">
+                                {parseInt(item.price)} CHZ
+                              </span>
                             </div>
-                            {fileValidation.message && (
-                              <p className="text-orange-500 text-sm">
-                                {fileValidation.message}
-                              </p>
-                            )}
-                            {uploadError && (
-                              <p className="text-red-500 text-sm">
-                                {uploadError}
-                              </p>
-                            )}
-                            {selectedFile && (
-                              <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                                <p className="text-zinc-400 text-sm truncate">
-                                  Selected: {selectedFile.name}
-                                </p>
-                                {isUploading && (
-                                  <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
-                                )}
-                              </div>
-                            )}
                           </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </div>
+                        <div className="p-6">
+                          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-[#cf0a0a] transition-colors">
+                            {item.name}
+                          </h3>
+                          <p className="text-zinc-400 text-sm mb-3 line-clamp-2">
+                            {item.description}
+                          </p>
 
-                  <Button
-                    type="submit"
-                    disabled={isUploading || isSubmittingMerch || !selectedFile}
-                    className="w-full bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300 disabled:opacity-50"
-                  >
-                    {isSubmittingMerch ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Creating...</span>
-                      </div>
-                    ) : isUploading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Uploading...</span>
-                      </div>
-                    ) : (
-                      "Create Listing"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </div>
+                          {/* Display metadata attributes */}
+                          {item.attributes && item.attributes.length > 0 && (
+                            <div className="mb-4 space-y-2">
+                              {item.attributes.map((attr, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center justify-between text-sm"
+                                >
+                                  <span className="text-zinc-500">
+                                    {attr.trait_type}:
+                                  </span>
+                                  <span className="text-zinc-300 font-medium">
+                                    {attr.value}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center text-zinc-400 text-sm">
+                              <Users className="w-4 h-4 mr-1" />
+                              Stock:{" "}
+                              {parseInt(item.supply) - parseInt(item.minted)}
+                            </div>
+                            <div className="text-xs text-zinc-500">
+                              ID: {item.id}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-zinc-500">
+                              Seller: {item.seller.slice(0, 6)}...
+                              {item.seller.slice(-4)}
+                            </div>
+                            <Button
+                              className="bg-[#cf0a0a] hover:bg-[#cf0a0a]/80 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105"
+                              disabled={
+                                parseInt(item.minted) >= parseInt(item.supply)
+                              }
+                            >
+                              {parseInt(item.minted) >= parseInt(item.supply)
+                                ? "Sold Out"
+                                : "Buy Now"}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                )
+              )
+            )}
           </motion.div>
-        )}
-
-        {/* Merchandise Grid */}
-        {viewMode === "user" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <AnimatePresence>
-              {sampleMerchandise.map((item, idx) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -30 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                >
-                  <Card className="bg-zinc-900/80 border-[#cf0a0a]/30 backdrop-blur-sm hover:scale-105 hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-                    <div className="relative">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-48 object-cover"
-                      />
-                    </div>
-
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-bold text-white mb-2">
-                        {item.name}
-                      </h3>
-                      <p className="text-zinc-400 text-sm mb-4 line-clamp-2">
-                        {item.description}
-                      </p>
-
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-2xl font-bold text-[#cf0a0a]">
-                          ${item.price}
-                        </div>
-                        <div className="text-zinc-400 text-sm">
-                          {item.stock} in stock
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
-                        <div className="text-sm text-zinc-400">
-                          By: {item.player}
-                        </div>
-                        <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
-                          Buy Now
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
         )}
       </div>
     </div>
