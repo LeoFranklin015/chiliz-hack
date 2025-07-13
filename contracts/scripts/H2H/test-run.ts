@@ -134,31 +134,55 @@ async function main() {
     console.log("Creating game...");
     console.log("Creator token addresses:", creatorTokenAddresses);
     const createGameTx = await (gameContractTyped as any).connect(userASigner).createGame(creatorTokenAddresses);
-    const createGameReceipt = await createGameTx.wait();
-    let gameCode: string | undefined = createGameReceipt && createGameReceipt.logs && createGameReceipt.logs.length > 0
-        ? createGameReceipt.logs[0].topics[1] // GameCreated(address,bytes32,uint256)
-        : undefined;
-    if (!gameCode) {
-        // fallback: get return value
-        try {
-            gameCode = await (gameContractTyped as any).userToGameCode(userA.address);
-        } catch {}
-    }
+    await createGameTx.wait();
+    // Always fetch the game code from the mapping
+    const gameCode = await (gameContractTyped as any).userToGameCode(userA.address);
     if (!gameCode || gameCode === ethers.ZeroHash) {
         throw new Error("Failed to get valid gameCode from createGame");
     }
     console.log("Game code:", gameCode);
 
+    // Debug: Check game details after creation
+    console.log("Checking game details after creation...");
+    try {
+        const gameDetails = await (gameContractTyped as any).getGameDetails(gameCode);
+        console.log("Game details after creation:", gameDetails);
+    } catch (error: any) {
+        console.log("Error getting game details:", error.message);
+    }
+
     // Join the game with User B
     console.log("Joining game...");
     console.log("Joiner token addresses:", joinerTokenAddresses);
-    const joinGameTx = await (gameContractTyped as any).connect(userBSigner).joinGame(gameCode, joinerTokenAddresses);
-    await joinGameTx.wait();
-    console.log("Game joined successfully!");
+    try {
+        const joinGameTx = await (gameContractTyped as any).connect(userBSigner).joinGame(gameCode, joinerTokenAddresses);
+        await joinGameTx.wait();
+        console.log("Game joined successfully!");
+    } catch (error: any) {
+        console.log("Error joining game:", error.message);
+        // Try to get more details about the game state
+        try {
+            const gameDetails = await (gameContractTyped as any).getGameDetails(gameCode);
+            console.log("Game details when trying to join:", gameDetails);
+        } catch (detailsError: any) {
+            console.log("Error getting game details:", detailsError.message);
+        }
+        throw error;
+    }
 
     // Get game details
     const gameDetails = await (gameContractTyped as any).getGameDetails(gameCode);
     console.log("Game details:", gameDetails);
+
+    // Print the winner
+    const winner = gameDetails[4];
+    if (winner === userA.address) {
+        console.log(`Winner: User A (${winner})`);
+    } else if (winner === userB.address) {
+        console.log(`Winner: User B (${winner})`);
+    } else {
+        console.log(`Winner: Unknown (${winner})`);
+    }
 }
 
 main()

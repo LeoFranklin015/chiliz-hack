@@ -14,11 +14,17 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    spicy: {
-      url: "https://spicy-rpc.chiliz.com",
-      accounts: [process.env.PRIVATE_KEY!],
-      chainId: 88882,
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
     },
+    ...(process.env.PRIVATE_KEY && {
+      spicy: {
+        url: "https://spicy-rpc.chiliz.com",
+        accounts: [process.env.PRIVATE_KEY],
+        chainId: 88882,
+      },
+    }),
   },
 };
 
