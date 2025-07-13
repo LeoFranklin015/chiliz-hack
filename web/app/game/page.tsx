@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import GameControls from '../components/GameControls';
 import QRCodeModal from '../components/QRCodeModal';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 
 // Types
 interface Player {
@@ -25,21 +26,23 @@ interface Token {
   id: string;
   name: string;
   image: string;
+  contractAddress?: string;
+  playerData?: {
+    playerId: string;
+    playerName: string;
+    teamName: string;
+    position: string;
+    teamCode: string;
+    teamLogo: string;
+    teamVenue: string;
+    teamContractAddress: string;
+    teamId: string;
+    image: string;
+    tokenName: string;
+    tokenSymbol: string;
+    deployedAt: string;
+  };
 }
-
-// Token data
-const tokensData: Token[] = [
-  { id: '1', name: 'Messi', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=M' },
-  { id: '2', name: 'Ronaldo', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=R' },
-  { id: '3', name: 'Mbappé', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=MB' },
-  { id: '4', name: 'Neymar', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=N' },
-  { id: '5', name: 'Salah', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=S' },
-  { id: '6', name: 'De Bruyne', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=DB' },
-  { id: '7', name: 'Lewandowski', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=L' },
-  { id: '8', name: 'Haaland', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=H' },
-  { id: '9', name: 'Modrić', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=MO' },
-  { id: '10', name: 'Bellingham', image: 'https://via.placeholder.com/80x80/10b981/ffffff?text=B' },
-];
 
 // Formation positions for 5-a-side, on one half of the pitch
 const formationPositions = [
@@ -61,7 +64,7 @@ const toFieldPlayer = (token: Token, index: number): Player => {
     origin: 'N/A',
     height: 'N/A',
     shirt: (index + 1).toString(),
-    pos: 'N/A',
+    pos: token.playerData?.position || 'N/A',
     dob: 'N/A',
     goals: 0,
     games: 0,
@@ -119,8 +122,53 @@ export default function FootballGame() {
   const [selected, setSelected] = useState<Token[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string | null>(null);
+  const [tokensData, setTokensData] = useState<Token[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const fieldRef = useRef<HTMLDivElement>(null);
+  const { address, isConnected } = useAccount();
+
+  // Fetch user's tokens when address changes
+  useEffect(() => {
+    if (!address || !isConnected) {
+      setTokensData([]);
+      setSelected([]);
+      return;
+    }
+
+    const fetchTokens = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`/api/tokens?address=${address}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          // Transform API data to match our Token interface
+          const transformedTokens: Token[] = data.data.map((token: any) => ({
+            id: token.contractAddress,
+            name: token.playerData?.playerName || token.tokenName || 'Unknown Player',
+            image: token.playerData?.image || 'https://via.placeholder.com/80x80/10b981/ffffff?text=?',
+            contractAddress: token.contractAddress,
+            playerData: token.playerData
+          }));
+          
+          setTokensData(transformedTokens);
+        } else {
+          setError(data.error || 'Failed to fetch tokens');
+        }
+      } catch (err) {
+        console.error('Error fetching tokens:', err);
+        setError('Failed to fetch tokens from wallet');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTokens();
+  }, [address, isConnected]);
 
   const toggleSelect = (token: Token) => {
     setSelected((prev) => {
@@ -138,7 +186,6 @@ export default function FootballGame() {
   };
 
   const handleJoinGame = (code: string) => {
-
     router.push(`/game/battle?gameId=${code}`);
   };
 
@@ -227,52 +274,89 @@ export default function FootballGame() {
               <Users size={20} />
               Your Player Tokens
             </h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              Select up to 5 players ({selected.length}/5)
-            </p>
             
-            <div className="grid grid-cols-2 gap-3">
-              {tokensData.map((token) => {
-                const isSel = !!selected.find((t) => t.id === token.id);
-                return (
-                  <div
-                    key={token.id}
-                    onClick={() => toggleSelect(token)}
-                    className={`cursor-pointer rounded-lg p-3 text-center border-2 transition-all duration-200 hover:scale-105 ${
-                      isSel 
-                        ? 'border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20' 
-                        : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/50'
-                    }`}
-                  >
-                    <img 
-                      src={token.image} 
-                      alt={token.name} 
-                      width={90} 
-                      height={90} 
-                      className="mx-auto rounded-full mb-2"
-                    />
-                    <span className="block text-sm text-zinc-200 font-medium">
-                      {token.name}
-                    </span>
-                    {isSel && (
-                      <div className="mt-1 text-xs text-red-400">
-                        Selected
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {selected.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-zinc-700">
-                <button
-                  onClick={() => setSelected([])}
-                  className="w-full py-2 px-4 bg-red-600/20 text-red-400 rounded-lg border border-red-600/30 hover:bg-red-600/30 transition-colors"
-                >
-                  Clear All
-                </button>
+            {!isConnected ? (
+              <div className="text-center py-8">
+                <p className="text-zinc-400 mb-4">Connect your wallet to see your player tokens</p>
+                <div className="text-xs text-zinc-500">
+                  You need to connect your wallet to view and select your player tokens for the game.
+                </div>
               </div>
+            ) : loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400 mx-auto mb-4"></div>
+                <p className="text-zinc-400">Loading your tokens...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-400 mb-2">Error loading tokens</p>
+                <p className="text-xs text-zinc-500">{error}</p>
+              </div>
+            ) : tokensData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-zinc-400 mb-2">No player tokens found</p>
+                <p className="text-xs text-zinc-500">
+                  You don't have any player tokens in your wallet. Visit the marketplace to purchase some!
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-zinc-400 mb-4">
+                  Select up to 5 players ({selected.length}/5)
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {tokensData.map((token) => {
+                    const isSel = !!selected.find((t) => t.id === token.id);
+                    return (
+                      <div
+                        key={token.id}
+                        onClick={() => toggleSelect(token)}
+                        className={`cursor-pointer rounded-lg p-3 text-center border-2 transition-all duration-200 hover:scale-105 ${
+                          isSel 
+                            ? 'border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20' 
+                            : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/50'
+                        }`}
+                      >
+                        <img 
+                          src={token.image} 
+                          alt={token.name} 
+                          width={90} 
+                          height={90} 
+                          className="mx-auto rounded-full mb-2"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/80x80/10b981/ffffff?text=?';
+                          }}
+                        />
+                        <span className="block text-sm text-zinc-200 font-medium">
+                          {token.name}
+                        </span>
+                        {token.playerData?.position && (
+                          <span className="block text-xs text-zinc-400 mt-1">
+                            {token.playerData.position}
+                          </span>
+                        )}
+                        {isSel && (
+                          <div className="mt-1 text-xs text-red-400">
+                            Selected
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {selected.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-zinc-700">
+                    <button
+                      onClick={() => setSelected([])}
+                      className="w-full py-2 px-4 bg-red-600/20 text-red-400 rounded-lg border border-red-600/30 hover:bg-red-600/30 transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -281,7 +365,7 @@ export default function FootballGame() {
       {/* Game Controls - moved outside and below */}
       <div className="w-full max-w-md mt-[-150px] ml-[-300px] z-100">
         <GameControls
-          isDisabled={selected.length < 5}
+          isDisabled={selected.length < 5 || !isConnected}
           onStartGame={handleStartGame}
           onJoinGame={handleJoinGame}
         />
