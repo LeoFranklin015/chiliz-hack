@@ -27,6 +27,15 @@ import {
   FormMessage,
 } from "../components/ui/form";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Ticket,
+  Plus,
+  Users,
+  MapPin,
+  DollarSign,
+  Calendar,
+  X,
+} from "lucide-react";
 
 // Ticket type
 type Ticket = {
@@ -53,146 +62,226 @@ const page = () => {
   }
 
   return (
-    <section className="relative min-h-screen py-20 overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-800">
-      {/* Decorative blurred circles */}
-      <div className="absolute top-10 right-10 w-32 h-32 bg-green-400/10 rounded-full blur-3xl z-0"></div>
-      <div className="absolute bottom-10 left-10 w-24 h-24 bg-blue-400/10 rounded-full blur-2xl z-0"></div>
-      <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-gradient-to-br from-cyan-400/10 to-purple-400/10 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2 z-0"></div>
-      <div className="relative z-10 max-w-2xl mx-auto px-6">
+    <div className="min-h-screen text-white relative overflow-hidden">
+      {/* Gaming Background Effects */}
+      <div className="dots-bg" />
+
+      {/* Decorative Gaming Elements */}
+      <div className="absolute top-20 right-20 w-32 h-32 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 left-20 w-24 h-24 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] rounded-full blur-2xl animate-pulse" />
+      <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-[linear-gradient(90deg,rgba(207,10,10,0.1)_0%,rgba(207,10,10,0.2)_100%)] rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+
+      {/* Particles Effect */}
+      <div className="particles absolute inset-0 pointer-events-none" />
+
+      <div className="relative z-10 container mx-auto px-6 py-20">
+        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
-          <div className="inline-flex items-center space-x-3 bg-gray-800/50 backdrop-blur-sm border border-gray-600 rounded-full px-6 py-3 mb-6">
-            <span className="text-2xl">🎟️</span>
-            <span className="text-white font-semibold">TICKETS</span>
+          <div className="inline-flex items-center space-x-3 bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/50 rounded-full px-8 py-4 mb-8 shadow-2xl">
+            <Ticket className="w-6 h-6 text-[#cf0a0a]" />
+            <span className="text-white font-mono font-bold tracking-wider uppercase text-lg">
+              TICKET MARKETPLACE
+            </span>
           </div>
-          <h2 className="text-5xl md:text-6xl font-black text-white mb-4">
-            List Your <span className="text-green-400">Tickets</span>
-          </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+
+          <h1 className="text-6xl md:text-7xl font-black text-white mb-6 gaming-text">
+            List Your <span className="text-white">Tickets</span>
+          </h1>
+
+          <p className="text-xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-medium">
             Offer your fans a seat at the match! Create and list tickets with
             custom info and pricing. All tickets are securely managed and
-            beautifully displayed.
+            beautifully displayed with our gaming-grade interface.
           </p>
         </motion.div>
+
+        {/* Create Ticket Button */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="flex justify-center mb-10"
+          className="flex justify-center mb-16"
         >
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="mb-6 text-lg px-8 py-4 font-bold bg-gradient-to-r from-green-400 to-cyan-500 text-white shadow-lg hover:from-cyan-500 hover:to-green-400 transition-all duration-300">
-                + Create Ticket
+              <Button className="group relative overflow-hidden bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold text-lg px-10 py-6 rounded-2xl shadow-2xl hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300 hover:scale-105 border border-[#cf0a0a] backdrop-blur-sm">
+                <div className="flex items-center space-x-3">
+                  <Plus className="w-6 h-6" />
+                  <span>Create Ticket</span>
+                </div>
               </Button>
             </DialogTrigger>
-            <DialogContent className="backdrop-blur-xl border-cyan-400/30 bg-gradient-to-br from-gray-900/90 to-gray-800/90">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-cyan-400">
-                  List a Ticket for Your Fans
-                </DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="match"
-                    render={({ field }: { field: any }) => (
-                      <FormItem>
-                        <FormLabel>Match Data</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="e.g. Team A vs Team B, 2024-06-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="seat"
-                    render={({ field }: { field: any }) => (
-                      <FormItem>
-                        <FormLabel>Ticket / Seat Info</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. Section 101, Row 5, Seat 8"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }: { field: any }) => (
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            placeholder="e.g. 1"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }: { field: any }) => (
-                      <FormItem>
-                        <FormLabel>Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            step="any"
-                            placeholder="e.g. 50"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
+
+            <DialogContent className=" border-[#cf0a0a]/30 bg-zinc-900/95 shadow-2xl rounded-2xl max-w-2xl p-0 overflow-hidden">
+              {/* Modal Header */}
+              <div className="bg-zinc-800/50 border-b border-zinc-700 p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
+                      <Ticket className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-2xl font-black text-[#cf0a0a] gaming-text">
+                        Create Ticket Listing
+                      </DialogTitle>
+                      <p className="text-zinc-400 text-sm mt-1">
+                        Fill in the details below to list your ticket
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-6"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="match"
+                      render={({ field }: { field: any }) => (
+                        <FormItem>
+                          <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
+                            <Calendar className="w-4 h-4 text-[#cf0a0a]" />
+                            <span>Match Details</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="e.g. Barcelona vs Real Madrid, 2024-06-15, Camp Nou"
+                              className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm resize-none"
+                              rows={3}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="seat"
+                      render={({ field }: { field: any }) => (
+                        <FormItem>
+                          <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
+                            <MapPin className="w-4 h-4 text-[#cf0a0a]" />
+                            <span>Seat Information</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. Section 101, Row 5, Seat 8"
+                              className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="quantity"
+                        render={({ field }: { field: any }) => (
+                          <FormItem>
+                            <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
+                              <Users className="w-4 h-4 text-[#cf0a0a]" />
+                              <span>Quantity</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                placeholder="e.g. 2"
+                                className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }: { field: any }) => (
+                          <FormItem>
+                            <FormLabel className="text-zinc-200 font-semibold flex items-center space-x-2 mb-2">
+                              <DollarSign className="w-4 h-4 text-[#cf0a0a]" />
+                              <span>Price</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                step="any"
+                                placeholder="e.g. 150"
+                                className="bg-zinc-800/50 border-zinc-600 text-white placeholder-zinc-400 rounded-xl backdrop-blur-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </form>
+                </Form>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-zinc-800/30 border-t border-zinc-700 p-6">
+                <div className="flex space-x-3">
+                  <DialogTrigger asChild>
                     <Button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-cyan-400 to-green-400 text-white font-bold py-3 rounded-lg shadow-lg hover:from-green-400 hover:to-cyan-400 transition-all duration-300"
+                      variant="outline"
+                      className="flex-1 bg-transparent border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white"
                     >
-                      Create Ticket
+                      Cancel
                     </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                  </DialogTrigger>
+                  <Button
+                    onClick={form.handleSubmit(onSubmit)}
+                    className="flex-1 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
+                  >
+                    Create Listing
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </motion.div>
-        <div className="mt-10 grid gap-8">
+
+        {/* Tickets Grid */}
+        <div className="space-y-6">
           {tickets.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center text-muted-foreground text-lg"
+              className="text-center py-20"
             >
-              No tickets listed yet.
+              <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-12 border border-zinc-700/50 shadow-2xl">
+                <Ticket className="w-16 h-16 text-zinc-600 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold text-zinc-400 mb-4">
+                  No Tickets Listed Yet
+                </h3>
+                <p className="text-zinc-500 text-lg">
+                  Create your first ticket listing to get started!
+                </p>
+              </div>
             </motion.div>
           )}
+
           <AnimatePresence>
             {tickets.map((ticket, idx) => (
               <motion.div
@@ -201,25 +290,44 @@ const page = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -30 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="group"
               >
-                <Card className="bg-gradient-to-br from-cyan-500/10 to-green-500/10 border-cyan-400/30 backdrop-blur-sm hover:scale-105 hover:shadow-2xl transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
-                      <span>🎫</span> {ticket.match}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-2 text-lg text-white">
-                      <strong>Seat:</strong>{" "}
-                      <span className="text-cyan-300">{ticket.seat}</span>
+                <Card className="bg-zinc-900/80 border-[#cf0a0a]/30 backdrop-blur-sm hover:scale-105 hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
+                          <Ticket className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white">
+                            {ticket.match}
+                          </h3>
+                          <p className="text-zinc-400 text-sm">{ticket.seat}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-[#cf0a0a]">
+                          ${ticket.price}
+                        </div>
+                        <div className="text-zinc-400 text-sm">per ticket</div>
+                      </div>
                     </div>
-                    <div className="mb-2 text-lg text-white">
-                      <strong>Quantity:</strong>{" "}
-                      <span className="text-green-300">{ticket.quantity}</span>
-                    </div>
-                    <div className="text-lg text-white">
-                      <strong>Price:</strong>{" "}
-                      <span className="text-yellow-300">{ticket.price}</span>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
+                      <div className="flex items-center space-x-4 text-sm text-zinc-400">
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4 text-[#cf0a0a]" />
+                          <span>{ticket.quantity} available</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-full animate-pulse" />
+                          <span>Available</span>
+                        </div>
+                      </div>
+                      <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-semibold px-4 py-2 rounded-lg hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
+                        View Details
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -228,7 +336,7 @@ const page = () => {
           </AnimatePresence>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

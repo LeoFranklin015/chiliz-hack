@@ -16,7 +16,7 @@ const FeaturesSection = () => {
                   Gaming Experience
                 </span>
                 <div className="flex justify-end">
-                  <CustomConnectButton />
+                 
                 </div>
               </h2>
               <p className="text-xl text-gray-300 leading-relaxed">
