@@ -3,10 +3,7 @@ import React, { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import {
-  Card,
-  CardContent,
-} from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -26,6 +23,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { usePinataUpload } from "../test/usePinataUpload";
+import { MerchContractAddress, MerchContractABI } from "../../lib/const";
+import { walletClient, client } from "../../lib/client";
+import { useAccount } from "wagmi";
 
 // Merchandise type
 type Merchandise = {
@@ -36,12 +36,14 @@ type Merchandise = {
   category: string;
   player: string;
   image: string;
-  stock: string,
+  stock: string;
 };
 
 const MarketplacePage = () => {
   const [merchandise, setMerchandise] = useState<Merchandise[]>([]);
   const [viewMode, setViewMode] = useState<"user" | "player">("user");
+  const [isSubmittingMerch, setIsSubmittingMerch] = useState(false);
+  const { address } = useAccount();
 
   // Initialize Pinata upload hook
   const {
@@ -75,17 +77,20 @@ const MarketplacePage = () => {
       price: "299.99",
       category: "jerseys",
       player: "Lionel Messi",
-      image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
       stock: "10",
     },
     {
       id: "2",
       name: "Ronaldo Training Kit",
-      description: "Limited edition training kit from Cristiano Ronaldo's collection",
+      description:
+        "Limited edition training kit from Cristiano Ronaldo's collection",
       price: "199.99",
       category: "training",
       player: "Cristiano Ronaldo",
-      image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop",
       stock: "5",
     },
   ];
@@ -98,27 +103,133 @@ const MarketplacePage = () => {
   ];
 
   async function onSubmit(data: any) {
-    // If a file is selected, upload it first
-    let imageUrl = data.image;
-    if (selectedFile) {
-      await uploadToPinata();
-      if (uploadedCID) {
-        imageUrl = getGatewayUrl(uploadedCID);
-      }
+    if (!address || !walletClient) {
+      alert("Please connect your wallet first!");
+      return;
     }
 
-    const newMerchandise: Merchandise = {
-      id: Date.now().toString(),
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      player: "Your Name", // This would be the logged-in player's name
-      image: imageUrl,
-      stock: data.stock,
-    };
-    setMerchandise((prev) => [...prev, newMerchandise]);
-    form.reset();
+    if (!selectedFile) {
+      alert("Please select an image for your merchandise!");
+      return;
+    }
+
+    setIsSubmittingMerch(true);
+
+    try {
+      // Step 1: Upload image to Pinata
+      console.log("Uploading image to Pinata...");
+      const imageCID = await uploadToPinata();
+
+      if (!imageCID) {
+        throw new Error("Failed to upload image to Pinata");
+      }
+
+      // Step 2: Create metadata JSON
+      const metadata = {
+        name: data.name,
+        description: data.description,
+        image: `ipfs://${imageCID}`,
+        attributes: [
+          {
+            trait_type: "Category",
+            value: data.category,
+          },
+          {
+            trait_type: "Price",
+            value: `${data.price} CHZ`,
+          },
+          {
+            trait_type: "Stock",
+            value: data.stock,
+          },
+        ],
+      };
+
+      // Step 3: Upload metadata to Pinata
+      console.log("Uploading metadata to Pinata...");
+      const metadataBlob = new Blob([JSON.stringify(metadata)], {
+        type: "application/json",
+      });
+      const metadataFile = new File([metadataBlob], "metadata.json", {
+        type: "application/json",
+      });
+
+      // Upload metadata using the API
+      const formData = new FormData();
+      formData.append("file", metadataFile);
+
+      const metadataResponse = await fetch("/api/upload-to-pinata", {
+        method: "POST",
+        body: formData,
+      });
+
+      const metadataResult = await metadataResponse.json();
+
+      if (!metadataResult.success) {
+        throw new Error("Failed to upload metadata to Pinata");
+      }
+
+      const metadataCID = metadataResult.IpfsHash || metadataResult.cid;
+      console.log("Metadata uploaded with CID:", metadataCID);
+
+      // Step 4: Create merchandise on blockchain
+      console.log("Creating merchandise on blockchain...");
+
+      // Convert form values to proper types
+      const price = BigInt(data.price);
+      const supply = BigInt(data.stock);
+      // For now, using a default payment token address (you might want to let user choose)
+      const paymentToken =
+        "0x0000000000000000000000000000000000000000" as `0x${string}`; // ETH or native token
+
+      console.log("Creating merchandise with params:", {
+        name: data.name,
+        ipfsMetadataCID: metadataCID,
+        price,
+        supply,
+        paymentToken,
+      });
+
+      // Call the createMerch function on the merchandise contract
+      const hash = await walletClient.writeContract({
+        address: MerchContractAddress as `0x${string}`,
+        abi: MerchContractABI,
+        functionName: "createMerch",
+        args: [data.name, metadataCID, price, supply, paymentToken],
+        account: address as `0x${string}`,
+      });
+
+      console.log("Transaction hash:", hash);
+
+      // Wait for transaction confirmation
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      console.log("Transaction confirmed:", receipt);
+
+      // Add to local state for immediate UI feedback
+      const newMerchandise: Merchandise = {
+        id: Date.now().toString(),
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        player: "Your Name", // This would be the logged-in player's name
+        image: getGatewayUrl(imageCID),
+        stock: data.stock,
+      };
+      setMerchandise((prev) => [...prev, newMerchandise]);
+
+      // Reset form
+      form.reset();
+
+      alert("Merchandise created successfully!");
+    } catch (error) {
+      console.error("Error creating merchandise:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      alert(`Error creating merchandise: ${errorMessage}`);
+    } finally {
+      setIsSubmittingMerch(false);
+    }
   }
 
   return (
@@ -151,8 +262,9 @@ const MarketplacePage = () => {
           </h1>
 
           <p className="text-xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-medium">
-            Exclusive merchandise from your favorite players. From signed jerseys to limited edition gear, 
-            find authentic items to show your support.
+            Exclusive merchandise from your favorite players. From signed
+            jerseys to limited edition gear, find authentic items to show your
+            support.
           </p>
         </motion.div>
 
@@ -211,7 +323,10 @@ const MarketplacePage = () => {
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
                     name="name"
@@ -343,13 +458,14 @@ const MarketplacePage = () => {
                         <FormControl>
                           <div className="space-y-4">
                             <div className="flex flex-col items-center justify-center w-full">
-                              <label 
-                                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-700/50 transition-all duration-300"
-                              >
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-700/50 transition-all duration-300">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                   <Upload className="w-8 h-8 text-zinc-400 mb-2" />
                                   <p className="mb-2 text-sm text-zinc-400">
-                                    <span className="font-bold">Click to upload</span> or drag and drop
+                                    <span className="font-bold">
+                                      Click to upload
+                                    </span>{" "}
+                                    or drag and drop
                                   </p>
                                   <p className="text-xs text-zinc-500">
                                     PNG, JPG, GIF or WebP (MAX. 10MB)
@@ -370,10 +486,14 @@ const MarketplacePage = () => {
                               </label>
                             </div>
                             {fileValidation.message && (
-                              <p className="text-orange-500 text-sm">{fileValidation.message}</p>
+                              <p className="text-orange-500 text-sm">
+                                {fileValidation.message}
+                              </p>
                             )}
                             {uploadError && (
-                              <p className="text-red-500 text-sm">{uploadError}</p>
+                              <p className="text-red-500 text-sm">
+                                {uploadError}
+                              </p>
                             )}
                             {selectedFile && (
                               <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
@@ -394,10 +514,15 @@ const MarketplacePage = () => {
 
                   <Button
                     type="submit"
-                    disabled={isUploading}
-                    className="w-full bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
+                    disabled={isUploading || isSubmittingMerch || !selectedFile}
+                    className="w-full bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300 disabled:opacity-50"
                   >
-                    {isUploading ? (
+                    {isSubmittingMerch ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Creating...</span>
+                      </div>
+                    ) : isUploading ? (
                       <div className="flex items-center space-x-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Uploading...</span>
@@ -454,9 +579,7 @@ const MarketplacePage = () => {
                         <div className="text-sm text-zinc-400">
                           By: {item.player}
                         </div>
-                        <Button 
-                          className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
-                        >
+                        <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
                           Buy Now
                         </Button>
                       </div>

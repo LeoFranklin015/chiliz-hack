@@ -30,10 +30,13 @@ import {
   players,
   TicketingContractAddress,
   TicketingContractABI,
+  MerchContractAddress,
+  MerchContractABI,
 } from "../../../lib/const";
 import { walletClient, client } from "../../../lib/client";
 import { parseEther } from "viem";
 import { useAccount } from "wagmi";
+import { usePinataUpload } from "../../test/usePinataUpload";
 
 // Get player data from const.ts and add calculated fields
 function getPlayerData(playerId: number) {
@@ -63,7 +66,32 @@ export default function PlayerProfileDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showMerchModal, setShowMerchModal] = useState(false);
+  const [showCreationModal, setShowCreationModal] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [isSubmittingMerch, setIsSubmittingMerch] = useState(false);
+  const [creationStep, setCreationStep] = useState(0);
+  const [creationSteps, setCreationSteps] = useState([
+    {
+      title: "Upload Image",
+      description: "Uploading image to IPFS",
+      status: "pending",
+    },
+    {
+      title: "Create Metadata",
+      description: "Creating metadata file",
+      status: "pending",
+    },
+    {
+      title: "Upload Metadata",
+      description: "Uploading metadata to IPFS",
+      status: "pending",
+    },
+    {
+      title: "Create on Blockchain",
+      description: "Creating merchandise on blockchain",
+      status: "pending",
+    },
+  ]);
   const [ticketForm, setTicketForm] = useState({
     matchId: "",
     quantity: "",
@@ -73,9 +101,21 @@ export default function PlayerProfileDashboard() {
     name: "",
     description: "",
     price: "",
-    stock: "",
+    supply: "",
   });
   const { address } = useAccount();
+
+  // Initialize Pinata upload hook for merchandise images
+  const {
+    selectedFile,
+    uploadedCID,
+    isUploading,
+    error: uploadError,
+    fileValidation,
+    uploadToPinata,
+    handleFileSelect,
+    getGatewayUrl,
+  } = usePinataUpload();
 
   useEffect(() => {
     if (!playerId) return;
@@ -165,11 +205,221 @@ export default function PlayerProfileDashboard() {
     }
   }
 
-  function handleMerchSubmit(e: React.FormEvent) {
+  async function handleMerchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Handle merch creation logic here
-    setMerchForm({ name: "", description: "", price: "", stock: "" });
+
+    if (!player?.tokenAddress) {
+      alert("Player token address not found!");
+      return;
+    }
+
+    if (!address || !walletClient) {
+      alert("Please connect your wallet first!");
+      return;
+    }
+
+    if (!selectedFile) {
+      alert("Please select an image for your merchandise!");
+      return;
+    }
+
+    // Close the form modal and open the creation modal
     setShowMerchModal(false);
+    setShowCreationModal(true);
+    setIsSubmittingMerch(true);
+
+    // Reset creation steps
+    setCreationStep(0);
+    setCreationSteps([
+      {
+        title: "Upload Image",
+        description: "Uploading image to IPFS",
+        status: "loading",
+      },
+      {
+        title: "Create Metadata",
+        description: "Creating metadata file",
+        status: "pending",
+      },
+      {
+        title: "Upload Metadata",
+        description: "Uploading metadata to IPFS",
+        status: "pending",
+      },
+      {
+        title: "Create on Blockchain",
+        description: "Creating merchandise on blockchain",
+        status: "pending",
+      },
+    ]);
+
+    try {
+      // Step 1: Upload image to Pinata
+      console.log("Uploading image to Pinata...");
+      const imageCID = await uploadToPinata();
+
+      if (!imageCID) {
+        throw new Error("Failed to upload image to Pinata");
+      }
+
+      // Update step 1 as completed
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 0 ? { ...step, status: "completed" } : step
+        )
+      );
+      setCreationStep(1);
+
+      // Step 2: Create metadata JSON
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 1 ? { ...step, status: "loading" } : step
+        )
+      );
+
+      const metadata = {
+        name: merchForm.name,
+        description: merchForm.description,
+        image: `ipfs://${imageCID}`,
+        attributes: [
+          {
+            trait_type: "Player",
+            value: player.playerName,
+          },
+          {
+            trait_type: "Team",
+            value: player.teamName,
+          },
+          {
+            trait_type: "Price",
+            value: `${merchForm.price} ${player.tokenSymbol}`,
+          },
+          {
+            trait_type: "Supply",
+            value: merchForm.supply,
+          },
+        ],
+      };
+
+      // Update step 2 as completed
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 1 ? { ...step, status: "completed" } : step
+        )
+      );
+      setCreationStep(2);
+
+      // Step 3: Upload metadata to Pinata
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 2 ? { ...step, status: "loading" } : step
+        )
+      );
+
+      console.log("Uploading metadata to Pinata...");
+      const metadataBlob = new Blob([JSON.stringify(metadata)], {
+        type: "application/json",
+      });
+      const metadataFile = new File([metadataBlob], "metadata.json", {
+        type: "application/json",
+      });
+
+      // Upload metadata using a separate upload call
+      const formData = new FormData();
+      formData.append("file", metadataFile);
+
+      const metadataResponse = await fetch("/api/upload-to-pinata", {
+        method: "POST",
+        body: formData,
+      });
+
+      const metadataResult = await metadataResponse.json();
+
+      if (!metadataResult.success) {
+        throw new Error("Failed to upload metadata to Pinata");
+      }
+
+      const metadataCID = metadataResult.IpfsHash || metadataResult.cid;
+      console.log("Metadata uploaded with CID:", metadataCID);
+
+      // Update step 3 as completed
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 2 ? { ...step, status: "completed" } : step
+        )
+      );
+      setCreationStep(3);
+
+      // Step 4: Create merchandise on blockchain
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 3 ? { ...step, status: "loading" } : step
+        )
+      );
+
+      console.log("Creating merchandise on blockchain...");
+
+      // Convert form values to proper types
+      const price = BigInt(merchForm.price);
+      const supply = BigInt(merchForm.supply);
+      const paymentToken = player.tokenAddress as `0x${string}`;
+
+      console.log("Creating merchandise with params:", {
+        name: merchForm.name,
+        ipfsMetadataCID: metadataCID,
+        price,
+        supply,
+        paymentToken,
+      });
+
+      // Call the createMerch function on the merchandise contract
+      const hash = await walletClient.writeContract({
+        address: MerchContractAddress as `0x${string}`,
+        abi: MerchContractABI,
+        functionName: "createMerch",
+        args: [merchForm.name, metadataCID, price, supply, paymentToken],
+        account: address as `0x${string}`,
+      });
+
+      console.log("Transaction hash:", hash);
+
+      // Wait for transaction confirmation
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      console.log("Transaction confirmed:", receipt);
+
+      // Update step 4 as completed
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === 3 ? { ...step, status: "completed" } : step
+        )
+      );
+
+      // Reset form and close modal after a delay to show success
+      setTimeout(() => {
+        setMerchForm({ name: "", description: "", price: "", supply: "" });
+        setShowCreationModal(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Error creating merchandise:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      // Update current step as error
+      setCreationSteps((prev) =>
+        prev.map((step, index) =>
+          index === creationStep
+            ? { ...step, status: "error", description: errorMessage }
+            : step
+        )
+      );
+
+      // Show error for a few seconds then close
+      setTimeout(() => {
+        setShowCreationModal(false);
+      }, 5000);
+    } finally {
+      setIsSubmittingMerch(false);
+    }
   }
 
   if (loading) return <Loader />;
@@ -510,75 +760,304 @@ export default function PlayerProfileDashboard() {
                   👕 Create Merch
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-zinc-900/95 border-[#cf0a0a]/30 shadow-2xl rounded-2xl max-w-2xl p-0 overflow-hidden">
-                <DialogHeader className="bg-zinc-800/50 border-b border-zinc-700 p-6">
+              <DialogContent className="bg-zinc-900/95 border-[#cf0a0a]/30 shadow-2xl rounded-2xl max-w-2xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+                <DialogHeader className="bg-zinc-800/50 border-b border-zinc-700 p-6 flex-shrink-0">
                   <DialogTitle className="text-2xl font-black text-[#cf0a0a] gaming-text">
                     List Merchandise
                   </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleMerchSubmit} className="p-6 space-y-6">
-                  <Input
-                    required
-                    placeholder="Product Name"
-                    value={merchForm.name}
-                    onChange={(e) =>
-                      setMerchForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                    className="bg-zinc-800/50 border-zinc-600 text-white"
-                  />
-                  <Textarea
-                    required
-                    placeholder="Description"
-                    value={merchForm.description}
-                    onChange={(e) =>
-                      setMerchForm((f) => ({
-                        ...f,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="bg-zinc-800/50 border-zinc-600 text-white"
-                  />
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="flex-1 overflow-y-auto">
+                  <form onSubmit={handleMerchSubmit} className="p-6 space-y-6">
                     <Input
                       required
-                      type="number"
-                      min={0}
-                      step="any"
-                      placeholder="Price"
-                      value={merchForm.price}
+                      placeholder="Product Name"
+                      value={merchForm.name}
                       onChange={(e) =>
-                        setMerchForm((f) => ({ ...f, price: e.target.value }))
+                        setMerchForm((f) => ({ ...f, name: e.target.value }))
                       }
                       className="bg-zinc-800/50 border-zinc-600 text-white"
                     />
-                    <Input
+                    <Textarea
                       required
-                      type="number"
-                      min={1}
-                      placeholder="Stock"
-                      value={merchForm.stock}
+                      placeholder="Description"
+                      value={merchForm.description}
                       onChange={(e) =>
-                        setMerchForm((f) => ({ ...f, stock: e.target.value }))
+                        setMerchForm((f) => ({
+                          ...f,
+                          description: e.target.value,
+                        }))
                       }
                       className="bg-zinc-800/50 border-zinc-600 text-white"
                     />
+
+                    {/* Image Upload */}
+                    <div className="space-y-2">
+                      <label className="text-white font-medium text-sm flex items-center space-x-2">
+                        <span>Product Image</span>
+                      </label>
+                      <div className="flex flex-col items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-600 rounded-xl cursor-pointer bg-zinc-800/50 hover:bg-zinc-700/50 transition-all duration-300">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="w-8 h-8 text-zinc-400 mb-2">📷</div>
+                            <p className="mb-2 text-sm text-zinc-400">
+                              <span className="font-bold">Click to upload</span>{" "}
+                              or drag and drop
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              PNG, JPG, GIF or WebP (MAX. 10MB)
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                handleFileSelect(e.target.files[0]);
+                              }
+                            }}
+                            disabled={isUploading}
+                            accept="image/*"
+                            required
+                          />
+                        </label>
+                      </div>
+                      {fileValidation.message && (
+                        <p className="text-orange-500 text-sm">
+                          {fileValidation.message}
+                        </p>
+                      )}
+                      {uploadError && (
+                        <p className="text-red-500 text-sm">{uploadError}</p>
+                      )}
+                      {selectedFile && (
+                        <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                          <p className="text-zinc-400 text-sm truncate">
+                            Selected: {selectedFile.name}
+                          </p>
+                          {isUploading && (
+                            <div className="w-4 h-4 text-zinc-400 animate-spin">
+                              ⏳
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        required
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder="Price"
+                        value={merchForm.price}
+                        onChange={(e) =>
+                          setMerchForm((f) => ({ ...f, price: e.target.value }))
+                        }
+                        className="bg-zinc-800/50 border-zinc-600 text-white"
+                      />
+                      <Input
+                        required
+                        type="number"
+                        min={1}
+                        placeholder="Supply"
+                        value={merchForm.supply}
+                        onChange={(e) =>
+                          setMerchForm((f) => ({
+                            ...f,
+                            supply: e.target.value,
+                          }))
+                        }
+                        className="bg-zinc-800/50 border-zinc-600 text-white"
+                      />
+                    </div>
+
+                    {/* Payment Token Info */}
+                    {player?.tokenAddress && (
+                      <div className="bg-zinc-800/30 rounded-lg p-4 border border-[#cf0a0a]/20">
+                        <h4 className="text-[#cf0a0a] font-semibold mb-2">
+                          Payment Token
+                        </h4>
+                        <div className="space-y-1 text-sm text-white">
+                          <div className="flex justify-between">
+                            <span>Token:</span>
+                            <span>{player.tokenSymbol || "Unknown"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Contract:</span>
+                            <span className="font-mono text-xs">
+                              {player.tokenAddress.slice(0, 6)}...
+                              {player.tokenAddress.slice(-4)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-zinc-400 mt-2">
+                            Customers will pay using this player's token
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Summary */}
+                    {merchForm.supply && merchForm.price && (
+                      <div className="bg-zinc-800/30 rounded-lg p-4 border border-[#cf0a0a]/20">
+                        <h4 className="text-[#cf0a0a] font-semibold mb-2">
+                          Merchandise Summary
+                        </h4>
+                        <div className="space-y-1 text-sm text-white">
+                          <div className="flex justify-between">
+                            <span>Product:</span>
+                            <span>{merchForm.name || "Unnamed Product"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Supply:</span>
+                            <span>{merchForm.supply} units</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Price per unit:</span>
+                            <span>
+                              {merchForm.price} {player?.tokenSymbol || "CHZ"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between font-semibold border-t border-zinc-600 pt-1 mt-2">
+                            <span>Total Value:</span>
+                            <span className="text-[#cf0a0a]">
+                              {(
+                                parseFloat(merchForm.supply || "0") *
+                                parseFloat(merchForm.price || "0")
+                              ).toFixed(2)}{" "}
+                              {player?.tokenSymbol || "CHZ"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setShowMerchModal(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={!selectedFile || !fileValidation.isValid}
+                        className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white disabled:opacity-50"
+                      >
+                        Create Listing
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Creation Progress Modal */}
+            <Dialog
+              open={showCreationModal}
+              onOpenChange={setShowCreationModal}
+            >
+              <DialogContent className="bg-zinc-900/95 border-[#cf0a0a]/30 shadow-2xl rounded-2xl max-w-md p-0 overflow-hidden">
+                <DialogHeader className="bg-zinc-800/50 border-b border-zinc-700 p-6">
+                  <DialogTitle className="text-2xl font-black text-[#cf0a0a] gaming-text">
+                    Creating Merchandise
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {creationSteps.map((step, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-center space-x-4 p-4 rounded-lg border transition-all duration-300 ${
+                          step.status === "loading"
+                            ? "border-[#cf0a0a] bg-[#cf0a0a]/10"
+                            : step.status === "completed"
+                            ? "border-green-500 bg-green-500/10"
+                            : step.status === "error"
+                            ? "border-red-500 bg-red-500/10"
+                            : "border-zinc-600 bg-zinc-800/50"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                            step.status === "completed"
+                              ? "bg-green-500 text-white"
+                              : step.status === "error"
+                              ? "bg-red-500 text-white"
+                              : step.status === "loading"
+                              ? "bg-[#cf0a0a] text-white"
+                              : "bg-zinc-600 text-zinc-300"
+                          }`}
+                        >
+                          {step.status === "loading" ? (
+                            <div className="w-4 h-4 animate-spin">⏳</div>
+                          ) : step.status === "completed" ? (
+                            "✓"
+                          ) : step.status === "error" ? (
+                            "✗"
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4
+                            className={`font-semibold ${
+                              step.status === "completed"
+                                ? "text-green-400"
+                                : step.status === "error"
+                                ? "text-red-400"
+                                : step.status === "loading"
+                                ? "text-[#cf0a0a]"
+                                : "text-zinc-300"
+                            }`}
+                          >
+                            {step.title}
+                          </h4>
+                          <p className="text-zinc-400 text-sm">
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={() => setShowMerchModal(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white"
-                    >
-                      Create Listing
-                    </Button>
-                  </DialogFooter>
-                </form>
+
+                  {creationSteps.every(
+                    (step) => step.status === "completed"
+                  ) && (
+                    <div className="mt-6 p-4 bg-green-500/10 border border-green-500 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                          ✓
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-green-400">
+                            Success!
+                          </h4>
+                          <p className="text-sm text-zinc-400">
+                            Your merchandise has been created successfully!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {creationSteps.some((step) => step.status === "error") && (
+                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                          ✗
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-red-400">Error!</h4>
+                          <p className="text-sm text-zinc-400">
+                            Something went wrong. Please try again.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </DialogContent>
             </Dialog>
 

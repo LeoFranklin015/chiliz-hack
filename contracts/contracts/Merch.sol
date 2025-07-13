@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MerchNFT is ERC721URIStorage {
     struct MerchInfo {
+        uint256 id;
         string name;
         string ipfsMetadataCID; // points to metadata JSON
         uint256 price;
@@ -58,6 +59,7 @@ contract MerchNFT is ERC721URIStorage {
         uint256 merchId = merchIdCounter;
 
         merchItems[merchId] = MerchInfo({
+            id: merchId,
             name: name,
             ipfsMetadataCID: ipfsMetadataCID,
             price: price,
@@ -123,5 +125,13 @@ contract MerchNFT is ERC721URIStorage {
 
     function getMerchIdFromTokenId(uint256 tokenId) external view returns (uint256) {
         return tokenIdToMerchId[tokenId];
+    }
+
+    function listAllMerch() external view returns (MerchInfo    [] memory) {
+        MerchInfo[] memory merchList = new MerchInfo[](merchIdCounter);
+        for (uint256 i = 1; i <= merchIdCounter; i++) {
+            merchList[i - 1] = merchItems[i];
+        }
+        return merchList;
     }
 }
