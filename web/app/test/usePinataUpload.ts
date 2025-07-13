@@ -15,10 +15,10 @@ export const usePinataUpload = () => {
   }>({ isValid: true, message: "" });
 
   // Upload function
-  const uploadToPinata = async () => {
+  const uploadToPinata = async (): Promise<string | null> => {
     if (!selectedFile) {
       setError("Please select a file first");
-      return;
+      return null;
     }
 
     try {
@@ -48,15 +48,26 @@ export const usePinataUpload = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(
+          `Upload failed: ${errorData.error || response.statusText}`
+        );
       }
 
       const result = await response.json();
-      setUploadedCID(result.IpfsHash);
-      setUploadProgress(100);
+      console.log("Upload result:", result);
+
+      if (result.success && result.IpfsHash) {
+        setUploadedCID(result.IpfsHash);
+        setUploadProgress(100);
+        return result.IpfsHash; // Return the CID directly
+      } else {
+        throw new Error("Upload failed: No CID returned");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
       setUploadProgress(0);
+      return null;
     } finally {
       setIsUploading(false);
     }
