@@ -182,11 +182,22 @@ export default function PlayerProfileDashboard() {
   if (!player) return <div className="text-center p-8">Player not found</div>;
 
   // Create radar chart data from real player stats
+  const safeParseFloat = (
+    value: string | number | undefined,
+    defaultValue: number = 0
+  ): number => {
+    if (value === undefined || value === null) return defaultValue;
+    const parsed = typeof value === "string" ? parseFloat(value) : value;
+    return isNaN(parsed) ? defaultValue : parsed;
+  };
+
   const radarData = [
     {
       metric: "Goals",
       player: Math.min(
-        (player.totalGoals / Math.max(player.totalAppearances, 1)) * 100,
+        (safeParseFloat(player.statistics.goals) /
+          Math.max(safeParseFloat(player.statistics.appearances), 1)) *
+          100,
         100
       ),
       average: 35,
@@ -194,38 +205,42 @@ export default function PlayerProfileDashboard() {
     {
       metric: "Assists",
       player: Math.min(
-        (player.totalAssists / Math.max(player.totalAppearances, 1)) * 100,
+        (safeParseFloat(player.statistics.assists) /
+          Math.max(safeParseFloat(player.statistics.appearances), 1)) *
+          100,
         100
       ),
       average: 25,
     },
     {
       metric: "Rating",
-      player: (parseFloat(player.rating) / 10) * 100,
+      player: (safeParseFloat(player.statistics.rating, 7) / 10) * 100,
       average: 68,
     },
     {
-      metric: "Passes",
+      metric: "Minutes",
       player: Math.min(
-        (player.totalPasses / Math.max(player.totalAppearances, 1) / 50) * 100,
+        (safeParseFloat(player.statistics.minutes) /
+          Math.max(safeParseFloat(player.statistics.appearances), 1) /
+          90) *
+          100,
         100
       ),
       average: 60,
     },
     {
-      metric: "Tackles",
-      player: Math.min(
-        (player.totalTackles / Math.max(player.totalAppearances, 1)) * 20,
-        100
-      ),
+      metric: "Appearances",
+      player: Math.min(safeParseFloat(player.statistics.appearances) * 4, 100),
       average: 45,
     },
     {
-      metric: "Duels Won",
-      player:
-        player.totalDuels > 0
-          ? (player.totalDuelsWon / player.totalDuels) * 100
-          : 0,
+      metric: "Performance",
+      player: Math.min(
+        (safeParseFloat(player.statistics.goals) +
+          safeParseFloat(player.statistics.assists)) *
+          10,
+        100
+      ),
       average: 52,
     },
   ];
@@ -252,8 +267,8 @@ export default function PlayerProfileDashboard() {
         <div className="bg-zinc-900/80 backdrop-blur-sm rounded-2xl p-6 flex flex-col items-center shadow-2xl border border-[#cf0a0a]/20">
           <div className="w-40 h-40 rounded-xl overflow-hidden mb-4 border-4 border-[#cf0a0a]/30">
             <img
-              src={player.photo}
-              alt={player.name}
+              src={player.photoUrl}
+              alt={player.playerName}
               className="w-full h-full object-cover"
             />
           </div>
@@ -701,55 +716,55 @@ export default function PlayerProfileDashboard() {
               <div className="flex flex-col gap-1">
                 <span className="text-zinc-400 text-sm">Match played</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalAppearances}
+                  {safeParseFloat(player.statistics.appearances)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-zinc-400 text-sm">Minutes played</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalMinutes}
+                  {safeParseFloat(player.statistics.minutes)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-zinc-400 text-sm">Goals</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalGoals}
+                  {safeParseFloat(player.statistics.goals)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-zinc-400 text-sm">Assists</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalAssists}
+                  {safeParseFloat(player.statistics.assists)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-zinc-400 text-sm">Passes</span>
+                <span className="text-zinc-400 text-sm">Rating</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalPasses}
+                  {safeParseFloat(player.statistics.rating, 7).toFixed(1)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-zinc-400 text-sm">Tackles</span>
+                <span className="text-zinc-400 text-sm">Jersey Number</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalTackles}
+                  {safeParseFloat(player.statistics.number) || "N/A"}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-zinc-400 text-sm">Duels Won</span>
+                <span className="text-zinc-400 text-sm">Captain</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalDuelsWon}
+                  {player.statistics.captain ? "Yes" : "No"}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-zinc-400 text-sm">Yellow cards</span>
+                <span className="text-zinc-400 text-sm">Lineups</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalYellowCards}
+                  {safeParseFloat(player.statistics.lineups)}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-zinc-400 text-sm">Red cards</span>
+                <span className="text-zinc-400 text-sm">Saves</span>
                 <span className="text-white font-bold text-lg">
-                  {player.totalRedCards}
+                  {player.statistics.saves || "N/A"}
                 </span>
               </div>
             </div>

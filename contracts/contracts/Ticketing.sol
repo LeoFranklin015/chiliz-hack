@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TicketContract  {
     struct TicketListing {
+        uint256 matchId;
         uint256 price; // in token
         uint256 available;
         address seller;
@@ -43,6 +44,7 @@ contract TicketContract  {
         require(ticketListings[matchId].available == 0, "Already listed");
 
         ticketListings[matchId] = TicketListing({
+            matchId: matchId,
             price: price,
             available: quantity,
             seller: msg.sender,

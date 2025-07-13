@@ -13675,7 +13675,7 @@ export const PlayerTokenABI = [
 ];
 
 export const TicketingContractAddress =
-  "0xC9EEd5d41E185BAde931591B641973F89F7A2F0a";
+  "0x14c062f3d81BC354c001A83E3254c960e53fEC19";
 
 export const TicketingContractABI = [
   {
@@ -13868,6 +13868,11 @@ export const TicketingContractABI = [
         components: [
           {
             internalType: "uint256",
+            name: "matchId",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
             name: "price",
             type: "uint256",
           },
@@ -13933,6 +13938,11 @@ export const TicketingContractABI = [
     ],
     name: "ticketListings",
     outputs: [
+      {
+        internalType: "uint256",
+        name: "matchId",
+        type: "uint256",
+      },
       {
         internalType: "uint256",
         name: "price",

@@ -40,9 +40,12 @@ import {
 import {
   TicketingContractAddress,
   TicketingContractABI,
+  players,
+  PlayerTokenABI,
 } from "../../lib/const";
-import { client } from "../../lib/client";
-import { formatEther } from "viem";
+import { client, walletClient } from "../../lib/client";
+
+import { useAccount } from "wagmi";
 
 // Contract ticket type
 type ContractTicket = {
@@ -65,6 +68,15 @@ const page = () => {
   const [tickets, setTickets] = useState<ContractTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedTicket, setSelectedTicket] = useState<ContractTicket | null>(
+    null
+  );
+  const [selectedMatchId, setSelectedMatchId] = useState<number | undefined>(
+    undefined
+  );
   const form = useForm({
     defaultValues: {
       match: "",
@@ -73,6 +85,171 @@ const page = () => {
       price: "",
     },
   });
+  const { address } = useAccount();
+
+  // Steps for the buying process
+  const buySteps = [
+    {
+      title: "Approve Token",
+      description: "Approve the payment token for purchase",
+      status: "pending" as "pending" | "loading" | "completed" | "error",
+    },
+    {
+      title: "Buy Ticket",
+      description: "Purchase the ticket",
+      status: "pending" as "pending" | "loading" | "completed" | "error",
+    },
+  ];
+
+  const [steps, setSteps] = useState(buySteps);
+
+  // Function to open buy modal
+  const openBuyModal = (
+    ticket: ContractTicket,
+    matchId: number | undefined
+  ) => {
+    setSelectedTicket(ticket);
+    setSelectedMatchId(matchId);
+    setCurrentStep(0);
+    setSteps(buySteps);
+    setShowBuyModal(true);
+  };
+
+  // Function to close buy modal
+  const closeBuyModal = () => {
+    setShowBuyModal(false);
+    setSelectedTicket(null);
+    setSelectedMatchId(undefined);
+    setCurrentStep(0);
+    setSteps(buySteps);
+  };
+
+  // Function to get token symbol from payment token address
+  const getTokenSymbol = (paymentTokenAddress: string): string => {
+    if (!paymentTokenAddress) {
+      console.warn("Payment token address is empty or undefined");
+      return "Unknown";
+    }
+
+    const player = players.find(
+      (p) => p.tokenAddress.toLowerCase() === paymentTokenAddress.toLowerCase()
+    );
+
+    if (!player) {
+      console.warn(`No player found for token address: ${paymentTokenAddress}`);
+      return "Unknown";
+    }
+
+    return player.tokenSymbol;
+  };
+
+  // Function to handle buying a ticket (stepper version)
+  const buyFunction = async () => {
+    if (!selectedMatchId || !selectedTicket) {
+      console.error("Match ID and ticket are required to buy a ticket");
+      return;
+    }
+
+    if (!address) {
+      alert("Please connect your wallet to buy a ticket");
+      return;
+    }
+
+    try {
+      // Step 1: Approve Token
+      setSteps((prev) =>
+        prev.map((step, index) =>
+          index === 0 ? { ...step, status: "loading" } : step
+        )
+      );
+      setCurrentStep(0);
+
+      console.log("Approving token for match ID:", selectedMatchId);
+      const approveTx = await walletClient?.writeContract({
+        address: selectedTicket.paymentToken as `0x${string}`,
+        abi: PlayerTokenABI,
+        functionName: "approve",
+        args: [TicketingContractAddress as `0x${string}`, selectedTicket.price],
+        account: address as `0x${string}`,
+      });
+
+      console.log("Approve transaction hash:", approveTx);
+      const approveReceipt = await client.waitForTransactionReceipt({
+        hash: approveTx as `0x${string}`,
+      });
+      console.log("Approve transaction receipt:", approveReceipt);
+
+      if (approveReceipt.status === "success") {
+        setSteps((prev) =>
+          prev.map((step, index) =>
+            index === 0 ? { ...step, status: "completed" } : step
+          )
+        );
+        setCurrentStep(1);
+
+        // Step 2: Buy Ticket
+        setSteps((prev) =>
+          prev.map((step, index) =>
+            index === 1 ? { ...step, status: "loading" } : step
+          )
+        );
+
+        console.log("Buying ticket for match ID:", selectedMatchId);
+        const hash = await walletClient?.writeContract({
+          address: TicketingContractAddress as `0x${string}`,
+          abi: TicketingContractABI,
+          functionName: "buyTicket",
+          args: [selectedMatchId],
+          account: address as `0x${string}`,
+        });
+
+        console.log("Transaction hash:", hash);
+        const receipt = await client.waitForTransactionReceipt({
+          hash: hash as `0x${string}`,
+        });
+        console.log("Transaction receipt:", receipt);
+
+        if (receipt.status === "success") {
+          setSteps((prev) =>
+            prev.map((step, index) =>
+              index === 1 ? { ...step, status: "completed" } : step
+            )
+          );
+
+          // After successful purchase, refresh the tickets
+          const contractTickets = (await client.readContract({
+            address: TicketingContractAddress as `0x${string}`,
+            abi: TicketingContractABI,
+            functionName: "listAllTickets",
+          })) as ContractTicket[];
+          setTickets(contractTickets);
+
+          // Close modal after success
+          setTimeout(() => closeBuyModal(), 2000);
+        } else {
+          setSteps((prev) =>
+            prev.map((step, index) =>
+              index === 1 ? { ...step, status: "error" } : step
+            )
+          );
+        }
+      } else {
+        setSteps((prev) =>
+          prev.map((step, index) =>
+            index === 0 ? { ...step, status: "error" } : step
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error buying ticket:", error);
+      const currentStepIndex = currentStep;
+      setSteps((prev) =>
+        prev.map((step, index) =>
+          index === currentStepIndex ? { ...step, status: "error" } : step
+        )
+      );
+    }
+  };
 
   // Fetch tickets from contract
   useEffect(() => {
@@ -404,7 +581,7 @@ const page = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-[#cf0a0a]">
-                            {formatEther(ticket.price)}
+                            {ticket.price} {getTokenSymbol(ticket.paymentToken)}
                           </div>
                           <div className="text-zinc-400 text-sm">
                             per ticket
@@ -424,10 +601,16 @@ const page = () => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <div className="text-xs text-zinc-500 font-mono">
-                            Token: {ticket.paymentToken.slice(0, 6)}...
+                          <div
+                            className="text-xs text-zinc-500 font-mono cursor-help"
+                            title={`Token Address: ${ticket.paymentToken}`}
+                          >
+                            Token: {getTokenSymbol(ticket.paymentToken)}
                           </div>
-                          <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-semibold px-4 py-2 rounded-lg hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
+                          <Button
+                            onClick={() => openBuyModal(ticket, ticket.matchId)}
+                            className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-semibold px-4 py-2 rounded-lg hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
+                          >
                             Buy Ticket
                           </Button>
                         </div>
@@ -439,6 +622,149 @@ const page = () => {
             </AnimatePresence>
           )}
         </div>
+
+        {/* Buy Ticket Modal with Stepper */}
+        <Dialog open={showBuyModal} onOpenChange={setShowBuyModal}>
+          <DialogContent className="max-w-2xl border-[#cf0a0a]/30 bg-zinc-900/95 shadow-2xl rounded-2xl p-0 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-zinc-800/50 border-b border-zinc-700 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
+                    <Ticket className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-black text-[#cf0a0a] gaming-text">
+                      Buy Ticket
+                    </DialogTitle>
+                    <p className="text-zinc-400 text-sm mt-1">
+                      Complete the purchase process
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeBuyModal}
+                  className="text-zinc-400 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Ticket Details */}
+              {selectedTicket && (
+                <div className="bg-zinc-800/50 rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">
+                        Match ID: {selectedMatchId}
+                      </h3>
+                      <p className="text-zinc-400 text-sm">
+                        Seller: {selectedTicket.seller.slice(0, 6)}...
+                        {selectedTicket.seller.slice(-4)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-[#cf0a0a]">
+                        {selectedTicket.price.toString()}{" "}
+                        {getTokenSymbol(selectedTicket.paymentToken)}
+                      </div>
+                      <div className="text-zinc-400 text-sm">
+                        {selectedTicket.available.toString()} available
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Stepper */}
+              <div className="space-y-4 mb-6">
+                {steps.map((step, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center space-x-4 p-4 rounded-lg border transition-all duration-300 ${
+                      currentStep === index
+                        ? "border-[#cf0a0a] bg-[#cf0a0a]/10"
+                        : step.status === "completed"
+                        ? "border-green-500 bg-green-500/10"
+                        : step.status === "error"
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-zinc-600 bg-zinc-800/50"
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        step.status === "completed"
+                          ? "bg-green-500 text-white"
+                          : step.status === "error"
+                          ? "bg-red-500 text-white"
+                          : step.status === "loading"
+                          ? "bg-[#cf0a0a] text-white"
+                          : "bg-zinc-600 text-zinc-300"
+                      }`}
+                    >
+                      {step.status === "loading" ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : step.status === "completed" ? (
+                        "✓"
+                      ) : step.status === "error" ? (
+                        "✗"
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4
+                        className={`font-semibold ${
+                          step.status === "completed"
+                            ? "text-green-400"
+                            : step.status === "error"
+                            ? "text-red-400"
+                            : currentStep === index
+                            ? "text-[#cf0a0a]"
+                            : "text-zinc-300"
+                        }`}
+                      >
+                        {step.title}
+                      </h4>
+                      <p className="text-zinc-400 text-sm">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <Button
+                  onClick={closeBuyModal}
+                  variant="outline"
+                  className="flex-1 bg-transparent border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                  disabled={steps.some((step) => step.status === "loading")}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={buyFunction}
+                  className="flex-1 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300"
+                  disabled={
+                    steps.some((step) => step.status === "loading") ||
+                    steps.every((step) => step.status === "completed")
+                  }
+                >
+                  {steps.some((step) => step.status === "loading")
+                    ? "Processing..."
+                    : steps.every((step) => step.status === "completed")
+                    ? "Purchase Complete!"
+                    : "Start Purchase"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
