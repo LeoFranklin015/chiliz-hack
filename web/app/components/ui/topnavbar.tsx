@@ -127,21 +127,32 @@ export default function TopNav() {
                   Marketplace
                 </Link>
                 <Link
+                  href="/claim"
+                  className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/game"
+                  className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
+                >
+                  Game
+                </Link>
+                <Link
                   href="/tickets"
                   className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
                 >
                   Tickets
                 </Link>
                 <Button
-                className="ml-2 mr-2  text-white font-bold rounded-lg hover:bg-[#a30808] transition-all"
-                onClick={() => setFaucetOpen(true)}
-              >
-                Faucet
-              </Button>
+                  className="ml-2 mr-2  text-white font-bold rounded-lg hover:bg-[#a30808] transition-all"
+                  onClick={() => setFaucetOpen(true)}
+                >
+                  Faucet
+                </Button>
               </div>
 
               {/* Faucet Button */}
-           
 
               {/* Connect Button with custom shape */}
               <CustomConnectButton />

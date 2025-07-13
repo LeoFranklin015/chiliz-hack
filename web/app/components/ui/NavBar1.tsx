@@ -128,13 +128,24 @@ export default function NavBar1() {
                   Marketplace
                 </Link>
                 <Link
+                  href="/game"
+                  className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
+                >
+                  Game
+                </Link>
+                <Link
+                  href="/claim"
+                  className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
+                >
+                  Claim
+                </Link>
+                <Link
                   href="/tickets"
                   className="text-zinc-400 hover:text-white transition-colors font-mono font-medium tracking-wide uppercase"
                 >
                   Tickets
                 </Link>
               </div>
-
 
               {/* Connect Button with custom shape */}
               <CustomConnectButton />
