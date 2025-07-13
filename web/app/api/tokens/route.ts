@@ -18,21 +18,28 @@ export async function GET(req: NextRequest) {
     }
 
     // Read the player registry file to get valid contract addresses
-    const registryPath = path.join(process.cwd(), "..", "contracts", "player-registry-61-2024.json");
+    const registryPath = path.join(
+      process.cwd(),
+      "..",
+      "contracts",
+      "player-registry-61-2024.json"
+    );
     const registryData = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-    
+
     // Create a map of contract addresses to player data for quick lookup
     const playerRegistry = new Map();
-    Object.entries(registryData.players).forEach(([playerId, player]: [string, any]) => {
-      playerRegistry.set(player.contractAddress.toLowerCase(), {
-        playerId,
-        ...player
-      });
-    });
+    Object.entries(registryData.players).forEach(
+      ([playerId, player]: [string, any]) => {
+        playerRegistry.set(player.contractAddress.toLowerCase(), {
+          playerId,
+          ...player,
+        });
+      }
+    );
 
     // Fetch token holdings from Chiliz API
     const apiUrl = `https://spicy-explorer.chiliz.com/api?module=account&action=tokenlist&address=${address}`;
-    
+
     const res = await fetch(apiUrl, {
       headers: {
         accept: "application/json",
@@ -47,10 +54,10 @@ export async function GET(req: NextRequest) {
     }
 
     const apiData = await res.json();
-    
+
     // Filter tokens to only include those in our player registry
     let filteredTokens = [];
-    
+
     if (apiData.result && Array.isArray(apiData.result)) {
       filteredTokens = apiData.result
         .filter((token: any) => {
@@ -60,7 +67,7 @@ export async function GET(req: NextRequest) {
         .map((token: any) => {
           const contractAddress = token.contractAddress?.toLowerCase();
           const playerData = playerRegistry.get(contractAddress);
-          
+
           return {
             ...token,
             playerData: {
@@ -68,31 +75,43 @@ export async function GET(req: NextRequest) {
               playerName: playerData.playerName,
               teamName: playerData.teamName,
               position: playerData.position,
+              teamCode: playerData.teamCode,
+              teamLogo: playerData.teamLogo,
+              teamVenue: playerData.teamVenue,
+              teamContractAddress: playerData.teamContractAddress,
+              teamId: playerData.teamId,
+              image: playerData.photoURL,
               tokenName: playerData.tokenName,
               tokenSymbol: playerData.tokenSymbol,
-              deployedAt: playerData.deployedAt
-            }
+              deployedAt: playerData.deployedAt,
+            },
           };
         });
     }
 
     // Apply additional filters
     if (team) {
-      filteredTokens = filteredTokens.filter((token: any) => 
+      filteredTokens = filteredTokens.filter((token: any) =>
         token.playerData.teamName.toLowerCase().includes(team.toLowerCase())
       );
     }
 
     if (position) {
-      filteredTokens = filteredTokens.filter((token: any) => 
-        token.playerData.position.toLowerCase() === position.toLowerCase()
+      filteredTokens = filteredTokens.filter(
+        (token: any) =>
+          token.playerData.position.toLowerCase() === position.toLowerCase()
       );
     }
 
     if (search) {
-      filteredTokens = filteredTokens.filter((token: any) => 
-        token.playerData.playerName.toLowerCase().includes(search.toLowerCase()) ||
-        token.playerData.tokenSymbol.toLowerCase().includes(search.toLowerCase())
+      filteredTokens = filteredTokens.filter(
+        (token: any) =>
+          token.playerData.playerName
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          token.playerData.tokenSymbol
+            .toLowerCase()
+            .includes(search.toLowerCase())
       );
     }
 
@@ -107,10 +126,9 @@ export async function GET(req: NextRequest) {
       filters: {
         team: team || null,
         position: position || null,
-        search: search || null
-      }
+        search: search || null,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching token holdings:", error);
     return NextResponse.json(
@@ -119,4 +137,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-  

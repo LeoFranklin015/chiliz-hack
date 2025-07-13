@@ -13675,7 +13675,7 @@ export const PlayerTokenABI = [
 ];
 
 export const TicketingContractAddress =
-  "0x410c4a0007Ed6f3AeD6e03377439cDC4a6Bed129";
+  "0xC9EEd5d41E185BAde931591B641973F89F7A2F0a";
 
 export const TicketingContractABI = [
   {

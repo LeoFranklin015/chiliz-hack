@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -35,10 +35,26 @@ import {
   DollarSign,
   Calendar,
   X,
+  Loader2,
 } from "lucide-react";
+import {
+  TicketingContractAddress,
+  TicketingContractABI,
+} from "../../lib/const";
+import { client } from "../../lib/client";
+import { formatEther } from "viem";
 
-// Ticket type
-type Ticket = {
+// Contract ticket type
+type ContractTicket = {
+  price: bigint;
+  available: bigint;
+  seller: string;
+  paymentToken: string;
+  matchId?: number; // We'll add this when we iterate
+};
+
+// UI ticket type for form
+type TicketForm = {
   match: string;
   seat: string;
   quantity: string;
@@ -46,7 +62,9 @@ type Ticket = {
 };
 
 const page = () => {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [tickets, setTickets] = useState<ContractTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const form = useForm({
     defaultValues: {
       match: "",
@@ -56,9 +74,39 @@ const page = () => {
     },
   });
 
-  function onSubmit(data: Ticket) {
-    setTickets((prev) => [...prev, data]);
+  // Fetch tickets from contract
+  useEffect(() => {
+    async function fetchTickets() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log("Fetching tickets from contract...");
+        const contractTickets = (await client.readContract({
+          address: TicketingContractAddress as `0x${string}`,
+          abi: TicketingContractABI,
+          functionName: "listAllTickets",
+        })) as ContractTicket[];
+
+        console.log("Fetched tickets:", contractTickets);
+        setTickets(contractTickets);
+      } catch (err) {
+        console.error("Error fetching tickets:", err);
+        setError("Failed to load tickets");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTickets();
+  }, []);
+
+  function onSubmit(data: TicketForm) {
+    // This would typically create a contract transaction
+    // For now, we'll just refetch the tickets
+    console.log("Form submitted:", data);
     form.reset();
+    // TODO: Implement actual ticket creation logic
   }
 
   return (
@@ -264,7 +312,50 @@ const page = () => {
 
         {/* Tickets Grid */}
         <div className="space-y-6">
-          {tickets.length === 0 && (
+          {/* Loading State */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-12 border border-zinc-700/50 shadow-2xl">
+                <Loader2 className="w-16 h-16 text-[#cf0a0a] mx-auto mb-6 animate-spin" />
+                <h3 className="text-2xl font-bold text-zinc-400 mb-4">
+                  Loading Tickets...
+                </h3>
+                <p className="text-zinc-500 text-lg">
+                  Fetching tickets from the blockchain
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-12 border border-red-500/30 shadow-2xl">
+                <X className="w-16 h-16 text-red-500 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold text-red-400 mb-4">
+                  Error Loading Tickets
+                </h3>
+                <p className="text-zinc-500 text-lg mb-6">{error}</p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && tickets.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -276,64 +367,77 @@ const page = () => {
                   No Tickets Listed Yet
                 </h3>
                 <p className="text-zinc-500 text-lg">
-                  Create your first ticket listing to get started!
+                  No tickets are currently available on the marketplace
                 </p>
               </div>
             </motion.div>
           )}
 
-          <AnimatePresence>
-            {tickets.map((ticket, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="group"
-              >
-                <Card className="bg-zinc-900/80 border-[#cf0a0a]/30 backdrop-blur-sm hover:scale-105 hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
-                          <Ticket className="w-6 h-6 text-white" />
+          {/* Tickets List */}
+          {!loading && !error && (
+            <AnimatePresence>
+              {tickets.map((ticket, idx) => (
+                <motion.div
+                  key={`${ticket.seller}-${idx}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -30 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="group"
+                >
+                  <Card className="bg-zinc-900/80 border-[#cf0a0a]/30 backdrop-blur-sm hover:scale-105 hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
+                            <Ticket className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-white">
+                              Match Ticket
+                            </h3>
+                            <p className="text-zinc-400 text-sm">
+                              Seller: {ticket.seller.slice(0, 6)}...
+                              {ticket.seller.slice(-4)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">
-                            {ticket.match}
-                          </h3>
-                          <p className="text-zinc-400 text-sm">{ticket.seat}</p>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-[#cf0a0a]">
+                            {formatEther(ticket.price)}
+                          </div>
+                          <div className="text-zinc-400 text-sm">
+                            per ticket
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-[#cf0a0a]">
-                          ${ticket.price}
-                        </div>
-                        <div className="text-zinc-400 text-sm">per ticket</div>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
-                      <div className="flex items-center space-x-4 text-sm text-zinc-400">
-                        <div className="flex items-center space-x-1">
-                          <Users className="w-4 h-4 text-[#cf0a0a]" />
-                          <span>{ticket.quantity} available</span>
+                      <div className="flex items-center justify-between pt-4 border-t border-zinc-700/50">
+                        <div className="flex items-center space-x-4 text-sm text-zinc-400">
+                          <div className="flex items-center space-x-1">
+                            <Users className="w-4 h-4 text-[#cf0a0a]" />
+                            <span>{ticket.available.toString()} available</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <div className="w-2 h-2 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-full animate-pulse" />
+                            <span>Available</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-full animate-pulse" />
-                          <span>Available</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="text-xs text-zinc-500 font-mono">
+                            Token: {ticket.paymentToken.slice(0, 6)}...
+                          </div>
+                          <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-semibold px-4 py-2 rounded-lg hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
+                            Buy Ticket
+                          </Button>
                         </div>
                       </div>
-                      <Button className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-semibold px-4 py-2 rounded-lg hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300">
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </div>
     </div>

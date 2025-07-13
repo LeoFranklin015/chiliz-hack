@@ -26,140 +26,30 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
-import { players } from "../../../lib/const";
+import {
+  players,
+  TicketingContractAddress,
+  TicketingContractABI,
+} from "../../../lib/const";
+import { walletClient, client } from "../../../lib/client";
+import { parseEther } from "viem";
+import { useAccount } from "wagmi";
 
-interface PlayerData {
-  name: string;
-  position: string;
-  team: string;
-  rating: string;
-  age: number;
-  nationality: string;
-  height: string;
-  weight: string;
-  photo: string;
-  teamLogo: string;
-  injured: boolean;
-  // Stats from all leagues
-  totalAppearances: number;
-  totalLineups: number;
-  totalMinutes: number;
-  totalGoals: number;
-  totalAssists: number;
-  totalShots: number;
-  totalShotsOn: number;
-  totalPasses: number;
-  totalKeyPasses: number;
-  totalTackles: number;
-  totalInterceptions: number;
-  totalDuels: number;
-  totalDuelsWon: number;
-  totalYellowCards: number;
-  totalRedCards: number;
-  // Contract info
-  contractAddress?: string;
-  tokenSymbol?: string;
-  tokenName?: string;
-  teamContractAddress?: string;
-  // All league stats for detailed view
-  allLeagueStats: any[];
-  // Points calculation
-  points: number;
-  value: string;
-}
+// Get player data from const.ts and add calculated fields
+function getPlayerData(playerId: number) {
+  const playerData = players.find((p) => p.playerId === playerId);
+  if (!playerData) return null;
 
-// Map API response to our PlayerData interface
-function mapApiPlayerToProfileCard(apiData: any): PlayerData {
-  const player = apiData?.player;
-  const statistics = apiData?.statistics || [];
-
-  // Find the player in our contracts array
-  const contractInfo = players.find((p) => p.playerId === player?.id);
-
-  // Aggregate stats from all leagues
-  let totalAppearances = 0;
-  let totalLineups = 0;
-  let totalMinutes = 0;
-  let totalGoals = 0;
-  let totalAssists = 0;
-  let totalShots = 0;
-  let totalShotsOn = 0;
-  let totalPasses = 0;
-  let totalKeyPasses = 0;
-  let totalTackles = 0;
-  let totalInterceptions = 0;
-  let totalDuels = 0;
-  let totalDuelsWon = 0;
-  let totalYellowCards = 0;
-  let totalRedCards = 0;
-  let bestRating = "0";
-
-  statistics.forEach((stat: any) => {
-    const games = stat.games || {};
-    const goals = stat.goals || {};
-    const shots = stat.shots || {};
-    const passes = stat.passes || {};
-    const tackles = stat.tackles || {};
-    const duels = stat.duels || {};
-    const cards = stat.cards || {};
-
-    totalAppearances += games.appearences || 0;
-    totalLineups += games.lineups || 0;
-    totalMinutes += games.minutes || 0;
-    totalGoals += goals.total || 0;
-    totalAssists += goals.assists || 0;
-    totalShots += shots.total || 0;
-    totalShotsOn += shots.on || 0;
-    totalPasses += passes.total || 0;
-    totalKeyPasses += passes.key || 0;
-    totalTackles += tackles.total || 0;
-    totalInterceptions += tackles.interceptions || 0;
-    totalDuels += duels.total || 0;
-    totalDuelsWon += duels.won || 0;
-    totalYellowCards += cards.yellow || 0;
-    totalRedCards += cards.red || 0;
-
-    if (games.rating && parseFloat(games.rating) > parseFloat(bestRating)) {
-      bestRating = games.rating;
-    }
-  });
-
-  const ratingNum = parseFloat(bestRating) || 7;
+  const ratingNum = parseFloat(playerData.statistics?.rating || "7") || 7;
   const points = Math.floor(ratingNum * 42);
   const value = (ratingNum * 5).toFixed(1);
 
   return {
-    name: player?.name || "Unknown Player",
-    position: statistics[0]?.games?.position || "Unknown",
-    team: statistics[0]?.team?.name || "Unknown Team",
-    rating: bestRating,
-    age: player?.age || 0,
-    nationality: player?.nationality || "Unknown",
-    height: player?.height || "N/A",
-    weight: player?.weight || "N/A",
-    photo: player?.photo || "/default-player.png",
-    teamLogo: statistics[0]?.team?.logo || "/default-team.png",
-    injured: player?.injured || false,
-    totalAppearances,
-    totalLineups,
-    totalMinutes,
-    totalGoals,
-    totalAssists,
-    totalShots,
-    totalShotsOn,
-    totalPasses,
-    totalKeyPasses,
-    totalTackles,
-    totalInterceptions,
-    totalDuels,
-    totalDuelsWon,
-    totalYellowCards,
-    totalRedCards,
-    contractAddress: contractInfo?.tokenAddress,
-    tokenSymbol: contractInfo?.tokenSymbol,
-    tokenName: contractInfo?.tokenName,
-    teamContractAddress: contractInfo?.teamContractAddress,
-    allLeagueStats: statistics,
+    ...playerData,
+    statistics: {
+      ...playerData.statistics,
+      conceded: playerData.statistics?.conceded || 0,
+    },
     points,
     value,
   };
@@ -168,11 +58,12 @@ function mapApiPlayerToProfileCard(apiData: any): PlayerData {
 export default function PlayerProfileDashboard() {
   const params = useParams();
   const playerId = params?.id;
-  const [player, setPlayer] = useState<PlayerData | null>(null);
+  const [player, setPlayer] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showMerchModal, setShowMerchModal] = useState(false);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [ticketForm, setTicketForm] = useState({
     matchId: "",
     quantity: "",
@@ -184,39 +75,94 @@ export default function PlayerProfileDashboard() {
     price: "",
     stock: "",
   });
+  const { address } = useAccount();
 
   useEffect(() => {
     if (!playerId) return;
     setLoading(true);
     setError(null);
-    console.log("Fetching player data for ID:", playerId);
-    fetch(`/api/player?playerId=${playerId}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch player data");
-        const data = await res.json();
-        console.log("Raw API response:", data);
-        if (data?.response?.[0]) {
-          const mappedPlayer = mapApiPlayerToProfileCard(data.response[0]);
-          console.log("Mapped player data:", mappedPlayer);
-          setPlayer(mappedPlayer);
-        } else {
-          console.log("No player data found in response");
-          setError("Player not found");
-        }
-      })
-      .catch((err) => {
-        console.error("Error fetching player data:", err);
-        setError(err.message || "Unknown error");
-      })
-      .finally(() => setLoading(false));
+
+    try {
+      console.log("Getting player data for ID:", playerId);
+      const playerData = getPlayerData(Number(playerId));
+
+      if (playerData) {
+        console.log("Found player data:", playerData);
+        setPlayer(playerData);
+      } else {
+        console.log("No player data found");
+        setError("Player not found");
+      }
+    } catch (err) {
+      console.error("Error getting player data:", err);
+      setError("Error loading player data");
+    } finally {
+      setLoading(false);
+    }
   }, [playerId]);
 
-  function handleTicketSubmit(e: React.FormEvent) {
+  async function handleTicketSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Handle ticket creation logic here
-    console.log("Creating ticket:", ticketForm);
-    setTicketForm({ matchId: "", quantity: "", price: "" });
-    setShowTicketModal(false);
+
+    if (!player?.tokenAddress) {
+      alert("Player token address not found!");
+      return;
+    }
+
+    if (!address || !walletClient) {
+      alert("Please connect your wallet first!");
+      return;
+    }
+
+    setIsSubmittingTicket(true);
+
+    try {
+      // Check if wallet is connected
+      if (!address) {
+        throw new Error("Please connect your wallet first");
+      }
+
+      // Convert form values to proper types
+      const matchId = BigInt(ticketForm.matchId);
+      const price = BigInt(ticketForm.price); // Convert to wei (already BigInt)
+      const quantity = BigInt(ticketForm.quantity);
+      const paymentToken = player.tokenAddress as `0x${string}`;
+
+      console.log("Creating ticket listing with params:", {
+        matchId,
+        price,
+        quantity,
+        paymentToken,
+      });
+
+      // Call the listTickets function on the ticketing contract
+      const hash = await walletClient.writeContract({
+        address: TicketingContractAddress as `0x${string}`,
+        abi: TicketingContractABI,
+        functionName: "listTickets",
+        args: [matchId, price, quantity, paymentToken],
+        account: address as `0x${string}`,
+      });
+
+      console.log("Transaction hash:", hash);
+
+      // Wait for transaction confirmation
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      console.log("Transaction confirmed:", receipt);
+
+      // Reset form and close modal on success
+      setTicketForm({ matchId: "", quantity: "", price: "" });
+      setShowTicketModal(false);
+
+      alert("Ticket listing created successfully!");
+    } catch (error) {
+      console.error("Error creating ticket listing:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      alert(`Error creating ticket listing: ${errorMessage}`);
+    } finally {
+      setIsSubmittingTicket(false);
+    }
   }
 
   function handleMerchSubmit(e: React.FormEvent) {
@@ -312,7 +258,7 @@ export default function PlayerProfileDashboard() {
             />
           </div>
           <div className="text-2xl font-bold text-white mb-1">
-            {player.name}
+            {player.playerName}
           </div>
           <div className="text-[#cf0a0a] font-bold text-lg mb-4">
             {player.points} pts
@@ -325,14 +271,14 @@ export default function PlayerProfileDashboard() {
               {player.nationality}
             </span>
             <span className="flex items-center gap-1 bg-zinc-800/60 px-3 py-1 rounded-lg text-white text-sm border border-zinc-700">
-              {player.teamLogo && (
+              {player.teamLogoUrl && (
                 <img
-                  src={player.teamLogo}
+                  src={player.teamLogoUrl}
                   alt="team"
                   className="w-5 h-5 rounded-full"
                 />
               )}{" "}
-              {player.team}
+              {player.teamName}
             </span>
           </div>
 
@@ -344,27 +290,31 @@ export default function PlayerProfileDashboard() {
             <div className="flex justify-between">
               <div className="text-zinc-400 text-sm">Match played</div>
               <div className="text-white font-medium">
-                {player.totalAppearances}
+                {player.statistics.appearances}
               </div>
             </div>
             <div className="flex justify-between">
               <div className="text-zinc-400 text-sm">Goals</div>
-              <div className="text-white font-medium">{player.totalGoals}</div>
+              <div className="text-white font-medium">
+                {player.statistics.goals}
+              </div>
             </div>
             <div className="flex justify-between">
               <div className="text-zinc-400 text-sm">Assists</div>
               <div className="text-white font-medium">
-                {player.totalAssists}
+                {player.statistics.assists}
               </div>
             </div>
             <div className="flex justify-between">
               <div className="text-zinc-400 text-sm">Rating</div>
-              <div className="text-white font-medium">{player.rating}</div>
+              <div className="text-white font-medium">
+                {player.statistics.rating}
+              </div>
             </div>
           </div>
 
           {/* Contract Info */}
-          {player.contractAddress && (
+          {player.tokenAddress && (
             <div className="w-full bg-gradient-to-r from-[#cf0a0a]/20 to-[#cf0a0a]/30 rounded-lg p-4 mb-6 border border-[#cf0a0a]/30">
               <h3 className="text-[#cf0a0a] font-semibold mb-2">
                 Token Contract
@@ -372,7 +322,7 @@ export default function PlayerProfileDashboard() {
               <div className="text-sm text-white">
                 <div className="mb-1">Symbol: {player.tokenSymbol}</div>
                 <div className="mb-1">
-                  Address: {player.contractAddress?.slice(0, 10)}...
+                  Address: {player.tokenAddress?.slice(0, 10)}...
                 </div>
                 <div className="text-xs opacity-75">
                   Click to view on explorer
@@ -443,7 +393,7 @@ export default function PlayerProfileDashboard() {
 
                     <div className="space-y-2">
                       <span className="text-white font-medium text-sm">
-                        Price per Ticket (CHZ)
+                        Price per Ticket ${player.tokenSymbol}
                       </span>
                       <Input
                         required
@@ -463,6 +413,31 @@ export default function PlayerProfileDashboard() {
                     </div>
                   </div>
 
+                  {/* Payment Token Info */}
+                  {player?.contractAddress && (
+                    <div className="bg-zinc-800/30 rounded-lg p-4 border border-[#cf0a0a]/20">
+                      <h4 className="text-[#cf0a0a] font-semibold mb-2">
+                        Payment Token
+                      </h4>
+                      <div className="space-y-1 text-sm text-white">
+                        <div className="flex justify-between">
+                          <span>Token:</span>
+                          <span>{player.tokenSymbol || "Unknown"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Contract:</span>
+                          <span className="font-mono text-xs">
+                            {player.contractAddress.slice(0, 6)}...
+                            {player.contractAddress.slice(-4)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-zinc-400 mt-2">
+                          Tickets will be paid using this player's token
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Summary */}
                   {ticketForm.quantity && ticketForm.price && (
                     <div className="bg-zinc-800/30 rounded-lg p-4 border border-[#cf0a0a]/20">
@@ -476,7 +451,9 @@ export default function PlayerProfileDashboard() {
                         </div>
                         <div className="flex justify-between">
                           <span>Price per ticket:</span>
-                          <span>{ticketForm.price} CHZ</span>
+                          <span>
+                            {ticketForm.price} {player?.tokenSymbol || "CHZ"}
+                          </span>
                         </div>
                         <div className="flex justify-between font-semibold border-t border-zinc-600 pt-1 mt-2">
                           <span>Total Value:</span>
@@ -485,7 +462,7 @@ export default function PlayerProfileDashboard() {
                               parseFloat(ticketForm.quantity || "0") *
                               parseFloat(ticketForm.price || "0")
                             ).toFixed(2)}{" "}
-                            CHZ
+                            {player?.tokenSymbol || "CHZ"}
                           </span>
                         </div>
                       </div>
@@ -496,14 +473,16 @@ export default function PlayerProfileDashboard() {
                       variant="outline"
                       type="button"
                       onClick={() => setShowTicketModal(false)}
+                      disabled={isSubmittingTicket}
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white"
+                      disabled={isSubmittingTicket}
+                      className="bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white disabled:opacity-50"
                     >
-                      Create Listing
+                      {isSubmittingTicket ? "Creating..." : "Create Listing"}
                     </Button>
                   </DialogFooter>
                 </form>
