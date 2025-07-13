@@ -217,13 +217,65 @@ export default function FootballGame() {
     });
   };
 
-  const handleStartGame = (code: string) => {
-    setGameCode(code);
-  };
-
-  const handleJoinGame = (code: string) => {
-    router.push(`/game/battle?gameId=${code}`);
-  };
+  // Add async join game logic
+  async function handleJoinGameContract(joinCode: string) {
+    if (!walletClient || !address || selected.length !== 5) return;
+    try {
+      setLoading(true);
+      setError(null);
+      // Prepare joiner token addresses
+      const contractAddresses = selected.map((t) => t.contractAddress);
+      const TOKENS_PER_CONTRACT = 200;
+      // 1. Check balances and allowances, approve if needed
+      for (const tokenAddr of contractAddresses) {
+        // Check balance
+        const balance = await client.readContract({
+          address: tokenAddr as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "balanceOf",
+          args: [address as `0x${string}`],
+        });
+        if (BigInt(balance as string) < BigInt(TOKENS_PER_CONTRACT)) {
+          setError(`Insufficient balance for token ${tokenAddr}`);
+          setLoading(false);
+          return;
+        }
+        // Check allowance
+        const allowance = await client.readContract({
+          address: tokenAddr as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address as `0x${string}`, GAME_CONTRACT_ADDRESS as `0x${string}`],
+        });
+        if (BigInt(allowance as string) < BigInt(TOKENS_PER_CONTRACT)) {
+          // Approve
+          await walletClient.writeContract({
+            address: tokenAddr as `0x${string}`,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [GAME_CONTRACT_ADDRESS as `0x${string}`, BigInt(TOKENS_PER_CONTRACT)],
+            account: address as `0x${string}`,
+          });
+        }
+      }
+      // 2. Call joinGame
+      const hash = await walletClient.writeContract({
+        address: GAME_CONTRACT_ADDRESS as `0x${string}`,
+        abi: GAME_CONTRACT_ABI,
+        functionName: "joinGame",
+        args: [joinCode, contractAddresses],
+        account: address as `0x${string}`,
+      });
+      // 3. Wait for transaction receipt
+      await client.waitForTransactionReceipt({ hash });
+      // 4. Navigate to battle page
+      router.push(`/game/battle?gameId=${joinCode}`);
+    } catch (err: any) {
+      setError(err?.message || "Failed to join game");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Add this function to handle the contract call
   async function handleStartGameContract() {
@@ -486,7 +538,7 @@ export default function FootballGame() {
         <GameControls
           isDisabled={selected.length < 5 || !isConnected || loading}
           onStartGame={handleStartGameContract}
-          onJoinGame={handleJoinGame}
+          onJoinGame={handleJoinGameContract}
         />
       </div>
 

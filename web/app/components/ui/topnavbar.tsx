@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "./button";
+import { Trophy } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -66,8 +67,8 @@ export default function TopNav() {
   const [faucetOpen, setFaucetOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState("");
 
-  // Hide navbar completely on landing page (/)
-  const shouldShowNavbar = pathname !== "/";
+  // Hide navbar completely on landing page (/) and on /game/battle
+  const shouldShowNavbar = pathname !== "/" && pathname !== "/game/battle";
 
   return (
     <AnimatePresence>
