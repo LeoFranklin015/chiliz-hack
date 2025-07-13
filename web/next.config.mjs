@@ -8,16 +8,21 @@ const nextConfig = {
         port: "",
         pathname: "/images/**",
       },
-    
-   
-        {
-          protocol: "https",
-          hostname: "img.lemde.fr",
-          port: "",
-          pathname: "/**",
-        },]
-      
-  },
-}
 
-export default nextConfig 
+      {
+        protocol: "https",
+        hostname: "img.lemde.fr",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "media.api-sports.io",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
+};
+
+export default nextConfig;
