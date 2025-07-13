@@ -1,19 +1,32 @@
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
+import { abi as GameContractMultiTokenABI } from '../../artifacts/contracts/Game.sol/GameContractMultiToken.json';
+
+const ERC20_ABI = [
+    "function approve(address spender, uint256 amount) public returns (bool)"
+];
 
 async function main() {
     const [deployer] = await ethers.getSigners();
     console.log("Deployer address:", deployer.address);
 
-    // Read deployment summary to get token addresses
-    const deploymentSummaryPath = path.join(__dirname, "../../deployment-summary-1752340057956.json");
-    const deploymentSummary = JSON.parse(fs.readFileSync(deploymentSummaryPath, "utf8"));
-    
-    // Get 10 random token addresses from the deployment summary
-    const tokenAddresses = deploymentSummary.deployedTokensList
-        .slice(0, 10)
-        .map((token: any) => token.tokenAddress);
+    // Instead of reading from deployment summary, deploy mock PlayerToken contracts for testing
+    const playerTokenAddresses: string[] = [];
+    const PlayerToken = await ethers.getContractFactory("PlayerToken");
+    for (let i = 0; i < 10; i++) {
+        const playerToken = await PlayerToken.deploy(
+            `PlayerToken${i+1}`,
+            `PT${i+1}`,
+            deployer.address // Use deployer as paymentToken for demo
+        );
+        await playerToken.waitForDeployment();
+        playerTokenAddresses.push(await playerToken.getAddress());
+    }
+    console.log("Deployed PlayerToken addresses:", playerTokenAddresses);
+
+    // Use these addresses for the rest of the script
+    const tokenAddresses = playerTokenAddresses;
 
     console.log("Using token addresses:", tokenAddresses);
 
@@ -46,16 +59,16 @@ async function main() {
     const userASigner = userA.connect(provider);
     const userBSigner = userB.connect(provider);
 
-    // Deploy a new GameContractERC20 using the specified token address
-    const GameContractERC20 = await ethers.getContractFactory("GameContractERC20");
-    const entryFeeTokenAddress = "0xAf4F8D2Bb4cB6e79456440Dd04A147AA64b6b3A1";
-    
-    console.log("Deploying new GameContractERC20 with entry fee token:", entryFeeTokenAddress);
-    const gameContract = await GameContractERC20.deploy(entryFeeTokenAddress);
+    // Always deploy a new GameContractMultiToken contract on each run
+    const GameContractMultiToken = await ethers.getContractFactory("GameContractMultiToken");
+    console.log("Deploying new GameContractMultiToken...");
+    const gameContract = await GameContractMultiToken.deploy();
     await gameContract.waitForDeployment();
-    
     const gameContractAddress = await gameContract.getAddress();
-    console.log("Deployed new GameContractERC20 at:", gameContractAddress);
+    console.log("GameContractMultiToken deployed at:", gameContractAddress);
+
+    // Use the ABI for all further interactions
+    const gameContractTyped = new ethers.Contract(gameContractAddress, GameContractMultiTokenABI, provider);
 
     // Mint tokens for both users on all PlayerToken contracts
     console.log("Minting tokens for User A on PlayerToken contracts...");
@@ -82,76 +95,33 @@ async function main() {
         }
     }
 
-    // Mint entry fee tokens for both users
-    console.log("Providing entry fee tokens for both users...");
-    const entryFeeTokenContract = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20", entryFeeTokenAddress);
-    
-    // Check if deployer has entry fee tokens to transfer
-    const deployerBalance = await entryFeeTokenContract.balanceOf(deployer.address);
-    console.log("Deployer entry fee token balance:", deployerBalance.toString());
-    
-    if (deployerBalance >= 1000) {
-        try {
-            const transferUserATx = await (entryFeeTokenContract as any).connect(deployer).transfer(userA.address, 1000);
-            await transferUserATx.wait();
-            console.log("Transferred 1000 entry fee tokens to", userA.address);
-        } catch (error: any) {
-            console.log("Failed to transfer entry fee tokens to User A:", error.message);
-        }
-        
-        try {
-            const transferUserBTx = await (entryFeeTokenContract as any).connect(deployer).transfer(userB.address, 1000);
-            await transferUserBTx.wait();
-            console.log("Transferred 1000 entry fee tokens to", userB.address);
-        } catch (error: any) {
-            console.log("Failed to transfer entry fee tokens to User B:", error.message);
-        }
-    } else {
-        console.log("Deployer doesn't have enough entry fee tokens. Trying to mint...");
-        try {
-            // Try to mint using PlayerToken interface
-            const playerTokenContract = await ethers.getContractAt("PlayerToken", entryFeeTokenAddress);
-            const mintUserATx = await playerTokenContract.mint(userA.address, 1000);
-            await mintUserATx.wait();
-            console.log("Minted 1000 entry fee tokens for", userA.address);
-        } catch (error: any) {
-            console.log("Failed to mint entry fee tokens for User A:", error.message);
-        }
-        
-        try {
-            const playerTokenContract = await ethers.getContractAt("PlayerToken", entryFeeTokenAddress);
-            const mintUserBTx = await playerTokenContract.mint(userB.address, 1000);
-            await mintUserBTx.wait();
-            console.log("Minted 1000 entry fee tokens for", userB.address);
-        } catch (error: any) {
-            console.log("Failed to mint entry fee tokens for User B:", error.message);
-        }
+    // Approve tokens for the game contract for both users and all tokens they will use
+    const creatorTokenAddresses = tokenAddresses.slice(0, 5); // User A's tokens
+    const joinerTokenAddresses = tokenAddresses.slice(5, 10); // User B's tokens
+    const approveAmount = 200;
+
+    console.log("Approving tokens for User A...");
+    for (const tokenAddress of creatorTokenAddresses) {
+        // Use ethers.Contract directly for approve
+        const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, userASigner);
+        const approveTx = await tokenContract.approve(gameContractAddress, approveAmount);
+        await approveTx.wait();
+        console.log(`User A approved ${approveAmount} tokens for ${tokenAddress}`);
     }
 
-    // Check balances and approve tokens
-    console.log("Checking balances and approving tokens...");
-    
-    const userAEntryBalance = await entryFeeTokenContract.balanceOf(userA.address);
-    console.log(userA.address, "entry fee token balance:", userAEntryBalance.toString());
-    
-    const userBEntryBalance = await entryFeeTokenContract.balanceOf(userB.address);
-    console.log(userB.address, "entry fee token balance:", userBEntryBalance.toString());
-
-    // Approve tokens for the game contract
-    const approveAmount = 200;
-    
-    const approveUserATx = await (entryFeeTokenContract as any).connect(userASigner).approve(gameContractAddress, approveAmount);
-    await approveUserATx.wait();
-    console.log(userA.address, "approved", approveAmount, "tokens to game contract");
-    
-    const approveUserBTx = await (entryFeeTokenContract as any).connect(userBSigner).approve(gameContractAddress, approveAmount);
-    await approveUserBTx.wait();
-    console.log(userB.address, "approved", approveAmount, "tokens to game contract");
+    console.log("Approving tokens for User B...");
+    for (const tokenAddress of joinerTokenAddresses) {
+        // Use ethers.Contract directly for approve
+        const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, userBSigner);
+        const approveTx = await tokenContract.approve(gameContractAddress, approveAmount);
+        await approveTx.wait();
+        console.log(`User B approved ${approveAmount} tokens for ${tokenAddress}`);
+    }
 
     // Check if users are already in games
     console.log("Checking if users are already in games...");
-    const userAGameCode = await gameContract.userToGameCode(userA.address);
-    const userBGameCode = await gameContract.userToGameCode(userB.address);
+    const userAGameCode = await gameContractTyped.userToGameCode(userA.address);
+    const userBGameCode = await gameContractTyped.userToGameCode(userB.address);
     
     if (userAGameCode !== ethers.ZeroHash) {
         console.log("User A is already in a game:", userAGameCode);
@@ -162,49 +132,32 @@ async function main() {
 
     // Create a game with User A
     console.log("Creating game...");
-    const creatorTokenAddresses = tokenAddresses.slice(0, 5); // Take first 5 addresses
     console.log("Creator token addresses:", creatorTokenAddresses);
-    
-    const createGameTx = await gameContract.connect(userASigner).createGame(creatorTokenAddresses);
+    const createGameTx = await (gameContractTyped as any).connect(userASigner).createGame(creatorTokenAddresses);
     const createGameReceipt = await createGameTx.wait();
-    console.log("Game created successfully!");
-    
-    if (!createGameReceipt || !createGameReceipt.logs) {
-        throw new Error("createGameReceipt or its logs are null");
-    }
-    // Get the game code from the event
-    let gameCode: string | undefined;
-    for (const log of createGameReceipt.logs) {
+    let gameCode: string | undefined = createGameReceipt && createGameReceipt.logs && createGameReceipt.logs.length > 0
+        ? createGameReceipt.logs[0].topics[1] // GameCreated(address,bytes32,uint256)
+        : undefined;
+    if (!gameCode) {
+        // fallback: get return value
         try {
-            const parsed = gameContract.interface.parseLog(log);
-            if (parsed && parsed.name === "GameCreated") {
-                gameCode = parsed.args[1]; // gameCode is the second argument
-                break;
-            }
-        } catch (e) {
-            // Not a GameCreated event, skip
-        }
+            gameCode = await (gameContractTyped as any).userToGameCode(userA.address);
+        } catch {}
     }
     if (!gameCode || gameCode === ethers.ZeroHash) {
-        console.error("Could not find GameCreated event or gameCode is invalid. All logs:");
-        for (const log of createGameReceipt.logs) {
-            console.error(log);
-        }
-        throw new Error("Failed to get valid gameCode from GameCreated event");
+        throw new Error("Failed to get valid gameCode from createGame");
     }
     console.log("Game code:", gameCode);
 
     // Join the game with User B
     console.log("Joining game...");
-    const joinerTokenAddresses = tokenAddresses.slice(5, 10); // Take next 5 addresses
     console.log("Joiner token addresses:", joinerTokenAddresses);
-    
-    const joinGameTx = await gameContract.connect(userBSigner).joinGame(gameCode, joinerTokenAddresses);
-    const joinGameReceipt = await joinGameTx.wait();
+    const joinGameTx = await (gameContractTyped as any).connect(userBSigner).joinGame(gameCode, joinerTokenAddresses);
+    await joinGameTx.wait();
     console.log("Game joined successfully!");
 
     // Get game details
-    const gameDetails = await gameContract.getGameDetails(gameCode);
+    const gameDetails = await (gameContractTyped as any).getGameDetails(gameCode);
     console.log("Game details:", gameDetails);
 }
 

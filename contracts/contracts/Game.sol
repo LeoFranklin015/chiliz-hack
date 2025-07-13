@@ -21,7 +21,7 @@ interface IPlayerToken {
     );
 }
 
-contract GameContractERC20 {
+contract GameContractMultiToken {
     // Struct to store game information
     struct Game {
         address creator;
@@ -29,35 +29,35 @@ contract GameContractERC20 {
         address joiner;
         address[] joinerContracts;
         bytes32 randomNumber;
-        uint256 totalPool;
         address winner;
         bool isActive;
-        mapping(address => uint256) tokenBalances;
+        // Track staked tokens for each player and contract
+        mapping(address => mapping(address => uint256)) stakedTokens; // user => tokenContract => amount
     }
 
     // Contract state
-    IERC20 public tokenContract; // The ERC20 token used for entry fees
     mapping(bytes32 => Game) public games;
     mapping(address => bytes32) public userToGameCode;
-    uint256 public constant ENTRY_FEE = 200;
+    uint256 public constant TOKENS_PER_CONTRACT = 200;
     uint256 public constant CONTRACT_COUNT = 5;
 
     // Events
     event GameCreated(address indexed creator, bytes32 gameCode, uint256 timestamp);
     event GameJoined(address indexed joiner, bytes32 gameCode, uint256 timestamp);
     event GameCompleted(address indexed winner, bytes32 gameCode, uint256 totalScore, uint256 timestamp);
-    event TokensDeposited(address indexed user, bytes32 gameCode, uint256 amount, uint256 timestamp);
-    event TokensDistributed(address indexed winner, bytes32 gameCode, uint256 amount, uint256 timestamp);
-
-    // Constructor to set token contract address for entry fees
-    constructor(address _tokenContract) {
-        tokenContract = IERC20(_tokenContract);
-    }
+    event TokensStaked(address indexed user, bytes32 gameCode, address[] tokenContracts, uint256 timestamp);
+    event TokensDistributed(address indexed winner, bytes32 gameCode, address[] tokenContracts, uint256 timestamp);
 
     // Create a new game
     function createGame(address[] memory contractAddresses) external returns (bytes32) {
         require(contractAddresses.length == CONTRACT_COUNT, "Must provide 5 ERC20 contract addresses");
         require(userToGameCode[msg.sender] == bytes32(0), "User already in a game");
+
+        // Validate that all contracts are ERC20 tokens and user has sufficient balance
+        for (uint256 i = 0; i < contractAddresses.length; i++) {
+            IERC20 token = IERC20(contractAddresses[i]);
+            require(token.balanceOf(msg.sender) >= TOKENS_PER_CONTRACT, "Insufficient token balance");
+        }
 
         // Generate game code
         bytes32 gameCode = keccak256(abi.encodePacked(
@@ -73,8 +73,8 @@ contract GameContractERC20 {
         game.creatorContracts = contractAddresses;
         game.isActive = true;
 
-        // Collect tokens
-        _collectTokens(msg.sender, gameCode);
+        // Stake tokens from all contracts
+        _stakeTokens(msg.sender, gameCode, contractAddresses);
 
         userToGameCode[msg.sender] = gameCode;
         emit GameCreated(msg.sender, gameCode, block.timestamp);
@@ -89,11 +89,17 @@ contract GameContractERC20 {
         require(contractAddresses.length == CONTRACT_COUNT, "Must provide 5 ERC20 contract addresses");
         require(userToGameCode[msg.sender] == bytes32(0), "User already in a game");
 
+        // Validate that all contracts are ERC20 tokens and user has sufficient balance
+        for (uint256 i = 0; i < contractAddresses.length; i++) {
+            IERC20 token = IERC20(contractAddresses[i]);
+            require(token.balanceOf(msg.sender) >= TOKENS_PER_CONTRACT, "Insufficient token balance");
+        }
+
         game.joiner = msg.sender;
         game.joinerContracts = contractAddresses;
 
-        // Collect tokens
-        _collectTokens(msg.sender, gameCode);
+        // Stake tokens from all contracts
+        _stakeTokens(msg.sender, gameCode, contractAddresses);
 
         // Generate random number and play game
         _generateRandomNumber(gameCode);
@@ -103,13 +109,17 @@ contract GameContractERC20 {
         emit GameJoined(msg.sender, gameCode, block.timestamp);
     }
 
-    // Internal function to collect tokens
-    function _collectTokens(address user, bytes32 gameCode) internal {
+    // Internal function to stake tokens from multiple contracts
+    function _stakeTokens(address user, bytes32 gameCode, address[] memory contractAddresses) internal {
         Game storage game = games[gameCode];
-        require(tokenContract.transferFrom(user, address(this), ENTRY_FEE), "Token transfer failed");
-        game.tokenBalances[user] = ENTRY_FEE;
-        game.totalPool += ENTRY_FEE;
-        emit TokensDeposited(user, gameCode, ENTRY_FEE, block.timestamp);
+        
+        for (uint256 i = 0; i < contractAddresses.length; i++) {
+            IERC20 token = IERC20(contractAddresses[i]);
+            require(token.transferFrom(user, address(this), TOKENS_PER_CONTRACT), "Token transfer failed");
+            game.stakedTokens[user][contractAddresses[i]] = TOKENS_PER_CONTRACT;
+        }
+        
+        emit TokensStaked(user, gameCode, contractAddresses, block.timestamp);
     }
 
     // Internal function to generate random number
@@ -189,18 +199,55 @@ contract GameContractERC20 {
 
         // Determine winner
         address winner = creatorScore >= joinerScore ? game.creator : game.joiner;
+        address loser = winner == game.creator ? game.joiner : game.creator;
         game.winner = winner;
         game.isActive = false;
 
-        // Distribute tokens
-        require(tokenContract.transfer(winner, game.totalPool), "Token distribution failed");
-        
+        // Distribute all staked tokens to winner
+        _distributeTokens(gameCode, winner, loser);
+
         // Clean up
         delete userToGameCode[game.creator];
         delete userToGameCode[game.joiner];
 
         emit GameCompleted(winner, gameCode, creatorScore >= joinerScore ? creatorScore : joinerScore, block.timestamp);
-        emit TokensDistributed(winner, gameCode, game.totalPool, block.timestamp);
+    }
+
+    // Internal function to distribute tokens to winner
+    function _distributeTokens(bytes32 gameCode, address winner, address loser) internal {
+        Game storage game = games[gameCode];
+        
+        // Get all unique token contracts from both players
+        address[] memory allContracts = new address[](CONTRACT_COUNT * 2);
+        
+        // Add creator contracts
+        for (uint256 i = 0; i < CONTRACT_COUNT; i++) {
+            allContracts[i] = game.creatorContracts[i];
+        }
+        
+        // Add joiner contracts
+        for (uint256 i = 0; i < CONTRACT_COUNT; i++) {
+            allContracts[CONTRACT_COUNT + i] = game.joinerContracts[i];
+        }
+        
+        // Transfer all staked tokens to winner
+        for (uint256 i = 0; i < allContracts.length; i++) {
+            address tokenContract = allContracts[i];
+            
+            // Transfer winner's staked tokens back to winner
+            uint256 winnerStaked = game.stakedTokens[winner][tokenContract];
+            if (winnerStaked > 0) {
+                IERC20(tokenContract).transfer(winner, winnerStaked);
+            }
+            
+            // Transfer loser's staked tokens to winner
+            uint256 loserStaked = game.stakedTokens[loser][tokenContract];
+            if (loserStaked > 0) {
+                IERC20(tokenContract).transfer(winner, loserStaked);
+            }
+        }
+        
+        emit TokensDistributed(winner, gameCode, allContracts, block.timestamp);
     }
 
     // View functions
@@ -210,8 +257,7 @@ contract GameContractERC20 {
         address joiner,
         address[] memory joinerContracts,
         address winner,
-        bool isActive,
-        uint256 totalPool
+        bool isActive
     ) {
         Game storage game = games[gameCode];
         return (
@@ -220,12 +266,34 @@ contract GameContractERC20 {
             game.joiner,
             game.joinerContracts,
             game.winner,
-            game.isActive,
-            game.totalPool
+            game.isActive
         );
     }
 
-    function getTokenBalance(bytes32 gameCode, address user) external view returns (uint256) {
-        return games[gameCode].tokenBalances[user];
+    function getStakedTokens(bytes32 gameCode, address user, address tokenContract) external view returns (uint256) {
+        return games[gameCode].stakedTokens[user][tokenContract];
+    }
+
+    function getAllStakedTokens(bytes32 gameCode, address user) external view returns (address[] memory contracts, uint256[] memory amounts) {
+        Game storage game = games[gameCode];
+        
+        // Determine which contracts to check based on user role
+        address[] memory userContracts;
+        if (user == game.creator) {
+            userContracts = game.creatorContracts;
+        } else if (user == game.joiner) {
+            userContracts = game.joinerContracts;
+        } else {
+            // Return empty arrays for non-participants
+            return (new address[](0), new uint256[](0));
+        }
+        
+        contracts = new address[](userContracts.length);
+        amounts = new uint256[](userContracts.length);
+        
+        for (uint256 i = 0; i < userContracts.length; i++) {
+            contracts[i] = userContracts[i];
+            amounts[i] = game.stakedTokens[user][userContracts[i]];
+        }
     }
 }

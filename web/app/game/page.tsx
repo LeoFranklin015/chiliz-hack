@@ -6,6 +6,11 @@ import GameControls from '../components/GameControls';
 import QRCodeModal from '../components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
+import { walletClient, client } from "../../lib/client";
+import { GAME_CONTRACT_ABI } from '../../lib/const';
+
+
+const GAME_CONTRACT_ADDRESS = "0x7a1ba7d0500eefef98f7da64d3f84b4ba501931c";
 
 // Types
 interface Player {
@@ -117,6 +122,37 @@ const PlayerDot = ({ player, active, onClick }: { player: Player; active: boolea
   </div>
 );
 
+// Helper ABI for ERC20
+const ERC20_ABI = [
+  {
+    "constant": true,
+    "inputs": [{ "name": "owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "name": "owner", "type": "address" },
+      { "name": "spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "spender", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "type": "function"
+  }
+];
+
 // Main component
 export default function FootballGame() {
   const [selected, setSelected] = useState<Token[]>([]);
@@ -188,6 +224,89 @@ export default function FootballGame() {
   const handleJoinGame = (code: string) => {
     router.push(`/game/battle?gameId=${code}`);
   };
+
+  // Add this function to handle the contract call
+  async function handleStartGameContract() {
+    if (!walletClient || !address || selected.length !== 5) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const contractAddresses = selected.map((t) => t.contractAddress);
+      const TOKENS_PER_CONTRACT = 200; // adjust if needed
+      // 1. Check balances and allowances, approve if needed
+      for (const tokenAddr of contractAddresses) {
+        // Check balance
+        const balance = await client.readContract({
+          address: tokenAddr as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "balanceOf",
+          args: [address as `0x${string}`],
+        });
+        if (BigInt(balance as string) < BigInt(TOKENS_PER_CONTRACT)) {
+          setError(`Insufficient balance for token ${tokenAddr}`);
+          setLoading(false);
+          return;
+        }
+        // Check allowance
+        const allowance = await client.readContract({
+          address: tokenAddr as `0x${string}`,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address as `0x${string}`, GAME_CONTRACT_ADDRESS as `0x${string}`],
+        });
+        if (BigInt(allowance as string) < BigInt(TOKENS_PER_CONTRACT)) {
+          // Approve
+          await walletClient.writeContract({
+            address: tokenAddr as `0x${string}`,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [GAME_CONTRACT_ADDRESS as `0x${string}`, BigInt(TOKENS_PER_CONTRACT)],
+            account: address as `0x${string}`,
+          });
+        }
+      }
+      // 2. Call createGame
+      const hash = await walletClient.writeContract({
+        address: GAME_CONTRACT_ADDRESS as `0x${string}`,
+        abi: GAME_CONTRACT_ABI,
+        functionName: "createGame",
+        args: [contractAddresses],
+        account: address as `0x${string}`,
+      });
+      console.log("hash", hash);
+      // 3. Wait for transaction receipt
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      console.log("receipt", receipt);
+      // 4. Parse logs for GameCreated event
+      let gameCode = null;
+      try {
+        const { decodeEventLog } = require("viem");
+        for (const log of receipt.logs) {
+          try {
+            const parsed = decodeEventLog({
+              abi: GAME_CONTRACT_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (parsed.eventName === "GameCreated") {
+              gameCode = parsed.args.gameCode || parsed.args[1];
+              break;
+            }
+          } catch (e) { /* skip non-matching logs */ }
+        }
+      } catch (e) { /* viem not available or error */ }
+      if (gameCode) {
+        console.log("gameCode", gameCode);
+        setGameCode(gameCode.toString());
+      } else {
+        setError("Game created but code not found in logs");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to create game");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const fieldPlayers = selected.map(toFieldPlayer);
 
@@ -365,8 +484,8 @@ export default function FootballGame() {
       {/* Game Controls - moved outside and below */}
       <div className="w-full max-w-md mt-[-150px] ml-[-300px] z-100">
         <GameControls
-          isDisabled={selected.length < 5 || !isConnected}
-          onStartGame={handleStartGame}
+          isDisabled={selected.length < 5 || !isConnected || loading}
+          onStartGame={handleStartGameContract}
           onJoinGame={handleJoinGame}
         />
       </div>
