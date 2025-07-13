@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { CircularCarousel } from "../components/ui/CircularCarousel";
 import ProfileCard from "../components/ui/ProfileCard";
 import PerformancePredictionGraph from "../components/PerformancePredictionGraph";
@@ -54,7 +54,7 @@ interface ApiPlayer {
 
 type PlayerListItem = (typeof playerList)[number];
 
-export default function PlayerPage() {
+function PlayerPageContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerCard | null>(null);
   const [players, setPlayers] = useState<PlayerCard[]>([]);
@@ -751,5 +751,13 @@ export default function PlayerPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function PlayerPage() {
+  return (
+    <Suspense fallback={<Loader size="lg" />}>
+      <PlayerPageContent />
+    </Suspense>
   );
 }

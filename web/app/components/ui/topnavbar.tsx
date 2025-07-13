@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "./button";
-import { Trophy } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
