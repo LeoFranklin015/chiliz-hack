@@ -3,10 +3,25 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { motion } from "framer-motion";
-import { ShoppingBag, DollarSign, Users, Loader2 } from "lucide-react";
+import {
+  ShoppingBag,
+  DollarSign,
+  Users,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
 import { MerchContractAddress, MerchContractABI } from "../../lib/const";
-import { client } from "../../lib/client";
+import { client, walletClient } from "../../lib/client";
 import { useAccount } from "wagmi";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
 
 // Merchandise type based on the smart contract MerchInfo struct
 type Merchandise = {
@@ -26,10 +41,358 @@ type Merchandise = {
   }>;
 };
 
+type PurchaseStep = "approve" | "buy" | "complete" | "error";
+
+interface PurchaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  item: Merchandise | null;
+  onPurchaseComplete: () => void;
+}
+
+const PurchaseModal: React.FC<PurchaseModalProps> = ({
+  isOpen,
+  onClose,
+  item,
+  onPurchaseComplete,
+}) => {
+  const [currentStep, setCurrentStep] = useState<PurchaseStep>("approve");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [approveHash, setApproveHash] = useState<string | null>(null);
+  const [buyHash, setBuyHash] = useState<string | null>(null);
+  const { address } = useAccount();
+
+  // ERC20 ABI for approve function
+  const ERC20_ABI = [
+    {
+      inputs: [
+        {
+          name: "spender",
+          type: "address",
+        },
+        {
+          name: "amount",
+          type: "uint256",
+        },
+      ],
+      name: "approve",
+      outputs: [
+        {
+          name: "",
+          type: "bool",
+        },
+      ],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ];
+
+  const handlePurchase = async () => {
+    if (!item || !address || !walletClient) {
+      setError("Missing required data");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      // Step 1: Approve the payment token
+      setCurrentStep("approve");
+      console.log("Approving payment token...");
+
+      const approveHash = await walletClient.writeContract({
+        address: item.paymentToken as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [MerchContractAddress, BigInt(item.price)],
+        account: address,
+      });
+
+      setApproveHash(approveHash);
+      console.log("Approval transaction hash:", approveHash);
+
+      // Wait for approval transaction to be confirmed
+      const approvalReceipt = await client.waitForTransactionReceipt({
+        hash: approveHash,
+      });
+
+      console.log("Approval confirmed:", approvalReceipt.status);
+
+      if (approvalReceipt.status !== "success") {
+        throw new Error("Token approval failed");
+      }
+
+      // Step 2: Buy the merchandise
+      setCurrentStep("buy");
+      console.log("Buying merchandise...");
+
+      const buyHash = await walletClient.writeContract({
+        address: MerchContractAddress as `0x${string}`,
+        abi: MerchContractABI,
+        functionName: "buyMerch",
+        args: [BigInt(item.id)],
+        account: address,
+      });
+
+      setBuyHash(buyHash);
+      console.log("Buy transaction hash:", buyHash);
+
+      // Wait for buy transaction to be confirmed
+      const buyReceipt = await client.waitForTransactionReceipt({
+        hash: buyHash,
+      });
+
+      console.log("Purchase confirmed:", buyReceipt.status);
+
+      if (buyReceipt.status === "success") {
+        setCurrentStep("complete");
+        onPurchaseComplete();
+      } else {
+        throw new Error("Purchase transaction failed");
+      }
+    } catch (error: any) {
+      console.error("Error during purchase:", error);
+      setError(error.message || "Purchase failed");
+      setCurrentStep("error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const resetModal = () => {
+    setCurrentStep("approve");
+    setIsProcessing(false);
+    setError(null);
+    setApproveHash(null);
+    setBuyHash(null);
+  };
+
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
+  const getStepStatus = (step: PurchaseStep) => {
+    if (currentStep === "error") return "error";
+    if (currentStep === "complete") return "complete";
+
+    const stepOrder = ["approve", "buy"];
+    const currentIndex = stepOrder.indexOf(currentStep);
+    const stepIndex = stepOrder.indexOf(step);
+
+    if (stepIndex < currentIndex) return "complete";
+    if (stepIndex === currentIndex)
+      return isProcessing ? "processing" : "current";
+    return "pending";
+  };
+
+  const StepIndicator: React.FC<{
+    step: PurchaseStep;
+    label: string;
+    description: string;
+  }> = ({ step, label, description }) => {
+    const status = getStepStatus(step);
+
+    return (
+      <div className="flex items-center space-x-4">
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            status === "complete"
+              ? "bg-green-500"
+              : status === "processing"
+              ? "bg-blue-500"
+              : status === "current"
+              ? "bg-[#cf0a0a]"
+              : status === "error"
+              ? "bg-red-500"
+              : "bg-gray-500"
+          }`}
+        >
+          {status === "complete" ? (
+            <CheckCircle className="w-4 h-4 text-white" />
+          ) : status === "processing" ? (
+            <Loader2 className="w-4 h-4 text-white animate-spin" />
+          ) : status === "error" ? (
+            <XCircle className="w-4 h-4 text-white" />
+          ) : (
+            <span className="text-white text-sm font-bold">
+              {step === "approve" ? "1" : "2"}
+            </span>
+          )}
+        </div>
+        <div className="flex-1">
+          <div
+            className={`font-medium ${
+              status === "complete"
+                ? "text-green-400"
+                : status === "processing" || status === "current"
+                ? "text-white"
+                : status === "error"
+                ? "text-red-400"
+                : "text-gray-400"
+            }`}
+          >
+            {label}
+          </div>
+          <div className="text-sm text-gray-400">{description}</div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!item) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            Purchase Merchandise
+          </DialogTitle>
+          <DialogDescription className="text-zinc-400">
+            Complete the purchase of {item.name}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Item Summary */}
+          <div className="flex items-center space-x-4 p-4 bg-zinc-800/50 rounded-lg">
+            <img
+              src={item.image || "/api/placeholder/64/64"}
+              alt={item.name}
+              className="w-16 h-16 object-cover rounded-lg"
+            />
+            <div className="flex-1">
+              <h3 className="font-medium text-white">{item.name}</h3>
+              <p className="text-sm text-zinc-400">
+                Price: {parseInt(item.price)} CHZ
+              </p>
+            </div>
+          </div>
+
+          {/* Purchase Steps */}
+          <div className="space-y-4">
+            <StepIndicator
+              step="approve"
+              label="Approve Payment Token"
+              description="Allow the contract to spend your CHZ tokens"
+            />
+            <div className="ml-4 border-l-2 border-zinc-700 h-4"></div>
+            <StepIndicator
+              step="buy"
+              label="Purchase Merchandise"
+              description="Complete the purchase and mint your NFT"
+            />
+          </div>
+
+          {/* Transaction Hashes */}
+          {approveHash && (
+            <div className="p-3 bg-zinc-800/30 rounded-lg">
+              <div className="text-sm font-medium text-zinc-300 mb-1">
+                Approval Transaction:
+              </div>
+              <div className="text-xs text-zinc-400 font-mono break-all">
+                {approveHash}
+              </div>
+            </div>
+          )}
+
+          {buyHash && (
+            <div className="p-3 bg-zinc-800/30 rounded-lg">
+              <div className="text-sm font-medium text-zinc-300 mb-1">
+                Purchase Transaction:
+              </div>
+              <div className="text-xs text-zinc-400 font-mono break-all">
+                {buyHash}
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="p-3 bg-red-600/20 border border-red-600/50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <p className="text-sm text-red-300">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {currentStep === "complete" && (
+            <div className="p-3 bg-green-600/20 border border-green-600/50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <p className="text-sm text-green-300">
+                  Purchase completed successfully!
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3">
+            {currentStep === "approve" && !isProcessing && (
+              <Button
+                onClick={handlePurchase}
+                className="flex-1 bg-[#cf0a0a] hover:bg-[#cf0a0a]/80 text-white"
+              >
+                Start Purchase
+              </Button>
+            )}
+
+            {currentStep === "complete" && (
+              <Button
+                onClick={handleClose}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                Close
+              </Button>
+            )}
+
+            {currentStep === "error" && (
+              <div className="flex space-x-2 w-full">
+                <Button
+                  onClick={handlePurchase}
+                  className="flex-1 bg-[#cf0a0a] hover:bg-[#cf0a0a]/80 text-white"
+                >
+                  Retry
+                </Button>
+                <Button
+                  onClick={handleClose}
+                  variant="outline"
+                  className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+
+            {(currentStep === "approve" || currentStep === "buy") &&
+              !isProcessing && (
+                <Button
+                  onClick={handleClose}
+                  variant="outline"
+                  className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                >
+                  Cancel
+                </Button>
+              )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const MarketplacePage = () => {
   const [merchandise, setMerchandise] = useState<Merchandise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Merchandise | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const { address } = useAccount();
 
   // Function to fetch all merchandise from the smart contract
@@ -118,6 +481,29 @@ const MarketplacePage = () => {
     }
   };
 
+  // Function to handle opening purchase modal
+  const handleBuyClick = (item: Merchandise) => {
+    if (!address) {
+      setError("Please connect your wallet first");
+      return;
+    }
+
+    setSelectedItem(item);
+    setShowPurchaseModal(true);
+  };
+
+  // Function to handle purchase completion
+  const handlePurchaseComplete = async () => {
+    // Refresh the merchandise list to update the minted count
+    await fetchAllMerch();
+  };
+
+  // Function to close modal
+  const handleCloseModal = () => {
+    setShowPurchaseModal(false);
+    setSelectedItem(null);
+  };
+
   // Fetch merchandise on component mount
   useEffect(() => {
     fetchAllMerch();
@@ -182,6 +568,19 @@ const MarketplacePage = () => {
           </Button>
         </motion.div>
 
+        {/* Error Display */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex justify-center mb-8"
+          >
+            <div className="bg-red-600/20 border border-red-600/50 rounded-lg p-4 max-w-md">
+              <p className="text-red-300 text-center">{error}</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Loading State */}
         {isLoading && (
           <div className="flex justify-center items-center py-20">
@@ -193,7 +592,7 @@ const MarketplacePage = () => {
         )}
 
         {/* Error State */}
-        {error && (
+        {error && !isLoading && (
           <div className="flex justify-center items-center py-20">
             <div className="text-center">
               <p className="text-red-400 text-lg mb-4">{error}</p>
@@ -296,13 +695,17 @@ const MarketplacePage = () => {
                               {item.seller.slice(-4)}
                             </div>
                             <Button
+                              onClick={() => handleBuyClick(item)}
                               className="bg-[#cf0a0a] hover:bg-[#cf0a0a]/80 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105"
                               disabled={
-                                parseInt(item.minted) >= parseInt(item.supply)
+                                parseInt(item.minted) >=
+                                  parseInt(item.supply) || !address
                               }
                             >
                               {parseInt(item.minted) >= parseInt(item.supply)
                                 ? "Sold Out"
+                                : !address
+                                ? "Connect Wallet"
                                 : "Buy Now"}
                             </Button>
                           </div>
@@ -316,6 +719,14 @@ const MarketplacePage = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Purchase Modal */}
+      <PurchaseModal
+        isOpen={showPurchaseModal}
+        onClose={handleCloseModal}
+        item={selectedItem}
+        onPurchaseComplete={handlePurchaseComplete}
+      />
     </div>
   );
 };
