@@ -13969,6 +13969,7 @@ export const TicketingContractABI = [
   },
 ];
 export const GAME_CONTRACT_ABI = [
+  // Write functions
   {
     inputs: [
       {
@@ -14149,44 +14150,58 @@ export const GAME_CONTRACT_ABI = [
     name: "TokensStaked",
     type: "event",
   },
+
+  {
+    inputs: [],
+    name: "CONTRACT_COUNT",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
   {
     inputs: [
       {
+        internalType: "bytes32",
+        name: "gameCode",
+        type: "bytes32",
+      },
+    ],
+    name: "getGameDetails",
+    outputs: [
+      {
+        internalType: "address",
+        name: "creator",
+        type: "address",
+      },
+      {
         internalType: "address[]",
-        name: "contractAddresses",
+        name: "creatorContracts",
         type: "address[]",
       },
       {
         internalType: "address",
-        name: "user",
+        name: "joiner",
         type: "address",
       },
-    ],
-    name: "checkAllTokensForUser",
-    outputs: [
       {
-        internalType: "uint256[]",
-        name: "balances",
-        type: "uint256[]",
+        internalType: "address[]",
+        name: "joinerContracts",
+        type: "address[]",
       },
       {
-        internalType: "uint256[]",
-        name: "allowances",
-        type: "uint256[]",
-      },
-      {
-        internalType: "bool[]",
-        name: "balanceSufficient",
-        type: "bool[]",
-      },
-      {
-        internalType: "bool[]",
-        name: "allowanceSufficient",
-        type: "bool[]",
+        internalType: "address",
+        name: "winner",
+        type: "address",
       },
       {
         internalType: "bool",
-        name: "allChecksPass",
+        name: "isActive",
         type: "bool",
       },
     ],
@@ -14195,89 +14210,52 @@ export const GAME_CONTRACT_ABI = [
   },
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "tokenContract",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-    ],
-    name: "checkTokenAllowance",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "allowance",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "sufficient",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "tokenContract",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-    ],
-    name: "checkTokenBalance",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "balance",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "sufficient",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-    ],
-    name: "checkUserStatus",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "alreadyInGame",
-        type: "bool",
-      },
       {
         internalType: "bytes32",
-        name: "currentGameCode",
+        name: "gameCode",
         type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "getAllStakedTokens",
+    outputs: [
+      {
+        internalType: "address[]",
+        name: "contracts",
+        type: "address[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "amounts",
+        type: "uint256[]",
       },
     ],
     stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [],
-    name: "CONTRACT_COUNT",
+    inputs: [
+      {
+        internalType: "bytes32",
+        name: "gameCode",
+        type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "tokenContract",
+        type: "address",
+      },
+    ],
+    name: "getStakedTokens",
     outputs: [
       {
         internalType: "uint256",

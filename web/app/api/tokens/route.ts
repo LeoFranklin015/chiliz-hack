@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     const team = searchParams.get("team");
     const position = searchParams.get("position");
     const search = searchParams.get("search");
+    const showAll = searchParams.get("showAll") === "true";
 
     if (!address) {
       return NextResponse.json(
@@ -46,42 +47,88 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // Fetch token holdings from Chiliz API
-    const apiUrl = `https://spicy-explorer.chiliz.com/api?module=account&action=tokenlist&address=${address}`;
-
-    const res = await fetch(apiUrl, {
-      headers: {
-        accept: "application/json",
-      },
-    });
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch token holdings from Chiliz API" },
-        { status: res.status }
-      );
-    }
-
-    const apiData = await res.json();
-
-    // Filter tokens to only include those in our player registry
     let filteredTokens = [];
 
-    if (apiData.result && Array.isArray(apiData.result)) {
-      filteredTokens = apiData.result
-        .filter((token: any) => {
-          const contractAddress = token.contractAddress?.toLowerCase();
-          return playerRegistry.has(contractAddress);
-        })
-        .map((token: any) => {
-          const contractAddress = token.contractAddress?.toLowerCase();
-          const playerData = playerRegistry.get(contractAddress);
-
-          return {
-            ...token,
-            playerData: playerData,
-          };
+    if (showAll) {
+      // Show all available tokens from the registry, regardless of ownership
+      // But also fetch user's actual holdings to show correct balances
+      let userHoldings = new Map();
+      
+      try {
+        const apiUrl = `https://spicy-explorer.chiliz.com/api?module=account&action=tokenlist&address=${address}`;
+        const res = await fetch(apiUrl, {
+          headers: {
+            accept: "application/json",
+          },
         });
+
+        if (res.ok) {
+          const apiData = await res.json();
+          if (apiData.result && Array.isArray(apiData.result)) {
+            apiData.result.forEach((token: any) => {
+              const contractAddress = token.contractAddress?.toLowerCase();
+              if (playerRegistry.has(contractAddress)) {
+                userHoldings.set(contractAddress, token.balance || "0");
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.log("Could not fetch user holdings for showAll mode:", error);
+      }
+
+      filteredTokens = Array.from(playerRegistry.entries()).map(([contractAddress, playerData]) => {
+        const balance = userHoldings.get(contractAddress) || "0";
+        const isOwned = BigInt(balance) > BigInt(0);
+        
+        return {
+          contractAddress: contractAddress,
+          tokenName: playerData.tokenName,
+          tokenSymbol: playerData.tokenSymbol,
+          balance: balance,
+          isOwned: isOwned,
+          playerData: playerData,
+        };
+      });
+    } else {
+      // Fetch token holdings from Chiliz API for owned tokens only
+      const apiUrl = `https://spicy-explorer.chiliz.com/api?module=account&action=tokenlist&address=${address}`;
+
+      const res = await fetch(apiUrl, {
+        headers: {
+          accept: "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        return NextResponse.json(
+          { error: "Failed to fetch token holdings from Chiliz API" },
+          { status: res.status }
+        );
+      }
+
+      const apiData = await res.json();
+      console.log(apiData);
+
+      if (apiData.result && Array.isArray(apiData.result)) {
+        filteredTokens = apiData.result
+          .filter((token: any) => {
+            const contractAddress = token.contractAddress?.toLowerCase();
+            return playerRegistry.has(contractAddress);
+          })
+          .map((token: any) => {
+            const contractAddress = token.contractAddress?.toLowerCase();
+            const playerData = playerRegistry.get(contractAddress);
+            const balance = token.balance || "0";
+            const isOwned = BigInt(balance) > BigInt(0);
+
+            return {
+              ...token,
+              playerData: playerData,
+              isOwned: isOwned,
+            };
+          });
+      }
     }
 
     // Apply additional filters
@@ -122,6 +169,7 @@ export async function GET(req: NextRequest) {
         team: team || null,
         position: position || null,
         search: search || null,
+        showAll: showAll,
       },
     });
   } catch (error) {

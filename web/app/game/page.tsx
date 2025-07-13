@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Users } from 'lucide-react';
+import { Users, CheckCircle, Loader2 } from 'lucide-react';
 import GameControls from '../components/GameControls';
 import QRCodeModal from '../components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
-import { walletClient, client } from "../../lib/client";
-import { GAME_CONTRACT_ABI } from '../../lib/const';
+import { isValidGameCode } from '../../lib/game-utils';
 
 
-const GAME_CONTRACT_ADDRESS = "0x7a1ba7d0500eefef98f7da64d3f84b4ba501931c";
 
 // Types
 interface Player {
@@ -32,6 +30,7 @@ interface Token {
   name: string;
   image: string;
   contractAddress?: string;
+  isOwned?: boolean;
   playerData?: {
     playerId: string;
     playerName: string;
@@ -47,6 +46,13 @@ interface Token {
     tokenSymbol: string;
     deployedAt: string;
   };
+}
+
+interface GameState {
+  isInGame: boolean;
+  gameCode: string | null;
+  gameDetails: any | null;
+  userRole: 'creator' | 'joiner' | null;
 }
 
 // Formation positions for 5-a-side, on one half of the pitch
@@ -76,7 +82,7 @@ const toFieldPlayer = (token: Token, index: number): Player => {
     x: pos.x,
     y: pos.y,
   };
-};
+  };
 
 // Player component
 const PlayerDot = ({ player, active, onClick }: { player: Player; active: boolean; onClick(): void }) => (
@@ -122,36 +128,7 @@ const PlayerDot = ({ player, active, onClick }: { player: Player; active: boolea
   </div>
 );
 
-// Helper ABI for ERC20
-const ERC20_ABI = [
-  {
-    "constant": true,
-    "inputs": [{ "name": "owner", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      { "name": "owner", "type": "address" },
-      { "name": "spender", "type": "address" }
-    ],
-    "name": "allowance",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      { "name": "spender", "type": "address" },
-      { "name": "amount", "type": "uint256" }
-    ],
-    "name": "approve",
-    "outputs": [{ "name": "", "type": "bool" }],
-    "type": "function"
-  }
-];
+
 
 // Main component
 export default function FootballGame() {
@@ -161,9 +138,49 @@ export default function FootballGame() {
   const [tokensData, setTokensData] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gameState, setGameState] = useState<GameState>({
+    isInGame: false,
+    gameCode: null,
+    gameDetails: null,
+    userRole: null
+  });
+  const [validationStatus, setValidationStatus] = useState<{
+    balances: boolean[];
+    allowances: boolean[];
+    allValid: boolean;
+  }>({
+    balances: [],
+    allowances: [],
+    allValid: false
+  });
+
+  const [showOnlyOwned, setShowOnlyOwned] = useState(false);
+  
   const router = useRouter();
   const fieldRef = useRef<HTMLDivElement>(null);
   const { address, isConnected } = useAccount();
+
+  // Check user's game status when address changes (mock version)
+  useEffect(() => {
+    if (!address || !isConnected) {
+      setGameState({
+        isInGame: false,
+        gameCode: null,
+        gameDetails: null,
+        userRole: null
+      });
+      return;
+    }
+
+    // For demo purposes, we'll assume user is not in a game initially
+    // In a real implementation, this would check the blockchain
+    setGameState({
+      isInGame: false,
+      gameCode: null,
+      gameDetails: null,
+      userRole: null
+    });
+  }, [address, isConnected, router]);
 
   // Fetch user's tokens when address changes
   useEffect(() => {
@@ -178,7 +195,8 @@ export default function FootballGame() {
       setError(null);
       
       try {
-        const response = await fetch(`/api/tokens?address=${address}`);
+        // Fetch all available tokens, not just the ones the user owns
+        const response = await fetch(`/api/tokens?address=${address}&showAll=true`);
         const data = await response.json();
         
         if (data.success) {
@@ -188,7 +206,8 @@ export default function FootballGame() {
             name: token.playerData?.playerName || token.tokenName || 'Unknown Player',
             image: token.playerData?.image || 'https://via.placeholder.com/80x80/10b981/ffffff?text=?',
             contractAddress: token.contractAddress,
-            playerData: token.playerData
+            playerData: token.playerData,
+            isOwned: token.isOwned || false
           }));
           
           setTokensData(transformedTokens);
@@ -206,6 +225,29 @@ export default function FootballGame() {
     fetchTokens();
   }, [address, isConnected]);
 
+  // Token validation - allow any 5 tokens for demo
+  useEffect(() => {
+    if (!address || !isConnected || selected.length === 0) {
+      setValidationStatus({
+        balances: [],
+        allowances: [],
+        allValid: false
+      });
+      return;
+    }
+
+    // For demo purposes, allow any 5 tokens
+    const balanceChecks = selected.map(() => true);
+    const allowanceChecks = selected.map(() => true);
+    const allValid = selected.length === 5;
+
+    setValidationStatus({
+      balances: balanceChecks,
+      allowances: allowanceChecks,
+      allValid
+    });
+  }, [selected, address, isConnected]);
+
   const toggleSelect = (token: Token) => {
     setSelected((prev) => {
       const already = prev.find((t) => t.id === token.id);
@@ -217,150 +259,160 @@ export default function FootballGame() {
     });
   };
 
-  // Add async join game logic
+  // Enhanced join game logic with mock API
   async function handleJoinGameContract(joinCode: string) {
-    if (!walletClient || !address || selected.length !== 5) return;
+    if (!address || selected.length !== 5) {
+      setError('Please select exactly 5 tokens to join a game.');
+      return;
+    }
+
+    // Validate game code format
+    if (!isValidGameCode(joinCode)) {
+      setError('Invalid game code format. Game code should be a 32-byte hex string starting with 0x.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      // Prepare joiner token addresses
-      const contractAddresses = selected.map((t) => t.contractAddress);
-      const TOKENS_PER_CONTRACT = 200;
-      // 1. Check balances and allowances, approve if needed
-      for (const tokenAddr of contractAddresses) {
-        // Check balance
-        const balance = await client.readContract({
-          address: tokenAddr as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "balanceOf",
-          args: [address as `0x${string}`],
-        });
-        if (BigInt(balance as string) < BigInt(TOKENS_PER_CONTRACT)) {
-          setError(`Insufficient balance for token ${tokenAddr}`);
-          setLoading(false);
-          return;
-        }
-        // Check allowance
-        const allowance = await client.readContract({
-          address: tokenAddr as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "allowance",
-          args: [address as `0x${string}`, GAME_CONTRACT_ADDRESS as `0x${string}`],
-        });
-        if (BigInt(allowance as string) < BigInt(TOKENS_PER_CONTRACT)) {
-          // Approve
-          await walletClient.writeContract({
-            address: tokenAddr as `0x${string}`,
-            abi: ERC20_ABI,
-            functionName: "approve",
-            args: [GAME_CONTRACT_ADDRESS as `0x${string}`, BigInt(TOKENS_PER_CONTRACT)],
-            account: address as `0x${string}`,
-          });
-        }
-      }
-      // 2. Call joinGame
-      const hash = await walletClient.writeContract({
-        address: GAME_CONTRACT_ADDRESS as `0x${string}`,
-        abi: GAME_CONTRACT_ABI,
-        functionName: "joinGame",
-        args: [joinCode, contractAddresses],
-        account: address as `0x${string}`,
+
+      const contractAddresses = selected.map(t => t.contractAddress as string);
+      console.log('Calling mock join game API with:', {
+        gameCode: joinCode,
+        contractAddresses: contractAddresses
       });
-      // 3. Wait for transaction receipt
-      await client.waitForTransactionReceipt({ hash });
-      // 4. Navigate to battle page
-      router.push(`/game/battle?gameId=${joinCode}`);
+
+      // Call mock join game API
+      const response = await fetch('/api/game/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gameCode: joinCode,
+          contractAddresses,
+          userAddress: address
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to join game');
+      }
+      
+      const { gameDetails, tokenTransfers, winner, isCreatorWinner, message } = result.data;
+      console.log('Game joined successfully!');
+      console.log('Winner:', winner);
+      console.log('Token transfers:', tokenTransfers);
+      
+      setGameState({
+        isInGame: true,
+        gameCode: joinCode,
+        gameDetails: gameDetails,
+        userRole: 'joiner'
+      });
+      
+      // Navigate to battle page with game results
+      router.push(`/game/battle?gameId=${joinCode}&winner=${winner}&isCreatorWinner=${isCreatorWinner}`);
+      
     } catch (err: any) {
-      setError(err?.message || "Failed to join game");
+      setError(err?.message || "Failed to join game. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Add this function to handle the contract call
+  // Enhanced start game logic with mock API
   async function handleStartGameContract() {
-    if (!walletClient || !address || selected.length !== 5) return;
+    console.log('handleStartGameContract called');
+    console.log('address:', address);
+    console.log('selected.length:', selected.length);
+    
+    if (!address || selected.length !== 5) {
+      const errorMsg = 'Please select exactly 5 players to start a game';
+      console.error('Validation failed:', errorMsg);
+      setError(errorMsg);
+      return;
+    }
+
     try {
+      console.log('Starting game creation...');
       setLoading(true);
       setError(null);
-      const contractAddresses = selected.map((t) => t.contractAddress);
-      const TOKENS_PER_CONTRACT = 200; // adjust if needed
-      // 1. Check balances and allowances, approve if needed
-      for (const tokenAddr of contractAddresses) {
-        // Check balance
-        const balance = await client.readContract({
-          address: tokenAddr as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "balanceOf",
-          args: [address as `0x${string}`],
-        });
-        if (BigInt(balance as string) < BigInt(TOKENS_PER_CONTRACT)) {
-          setError(`Insufficient balance for token ${tokenAddr}`);
-          setLoading(false);
-          return;
-        }
-        // Check allowance
-        const allowance = await client.readContract({
-          address: tokenAddr as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "allowance",
-          args: [address as `0x${string}`, GAME_CONTRACT_ADDRESS as `0x${string}`],
-        });
-        if (BigInt(allowance as string) < BigInt(TOKENS_PER_CONTRACT)) {
-          // Approve
-          await walletClient.writeContract({
-            address: tokenAddr as `0x${string}`,
-            abi: ERC20_ABI,
-            functionName: "approve",
-            args: [GAME_CONTRACT_ADDRESS as `0x${string}`, BigInt(TOKENS_PER_CONTRACT)],
-            account: address as `0x${string}`,
-          });
-        }
-      }
-      // 2. Call createGame
-      const hash = await walletClient.writeContract({
-        address: GAME_CONTRACT_ADDRESS as `0x${string}`,
-        abi: GAME_CONTRACT_ABI,
-        functionName: "createGame",
-        args: [contractAddresses],
-        account: address as `0x${string}`,
+      
+      const contractAddresses = selected.map((t) => t.contractAddress as string);
+      console.log('Contract addresses:', contractAddresses);
+      
+      // Call mock create game API
+      console.log('Calling mock create game API...');
+      const response = await fetch('/api/game/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contractAddresses,
+          userAddress: address
+        }),
       });
-      console.log("hash", hash);
-      // 3. Wait for transaction receipt
-      const receipt = await client.waitForTransactionReceipt({ hash });
-      console.log("receipt", receipt);
-      // 4. Parse logs for GameCreated event
-      let gameCode = null;
-      try {
-        const { decodeEventLog } = require("viem");
-        for (const log of receipt.logs) {
-          try {
-            const parsed = decodeEventLog({
-              abi: GAME_CONTRACT_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
-            if (parsed.eventName === "GameCreated") {
-              gameCode = parsed.args.gameCode || parsed.args[1];
-              break;
-            }
-          } catch (e) { /* skip non-matching logs */ }
-        }
-      } catch (e) { /* viem not available or error */ }
-      if (gameCode) {
-        console.log("gameCode", gameCode);
-        setGameCode(gameCode.toString());
-      } else {
-        setError("Game created but code not found in logs");
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create game');
       }
+      
+      const { gameCode, transactionHash } = result.data;
+      console.log('Game created successfully!');
+      console.log('Game code:', gameCode);
+      console.log('Transaction hash:', transactionHash);
+      
+      setGameCode(gameCode);
+      setGameState({
+        isInGame: true,
+        gameCode: gameCode,
+        gameDetails: result.data,
+        userRole: 'creator'
+      });
+      
+      // Show success message with copyable game code
+      setError(null);
+      console.log('Game created successfully! Game code:', gameCode);
+      
     } catch (err: any) {
-      setError(err?.message || "Failed to create game");
+      console.error('Error creating game:', err);
+      setError(err?.message || "Failed to create game. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   const fieldPlayers = selected.map(toFieldPlayer);
+
+  // If user is already in a game, show game status
+  if (gameState.isInGame) {
+    return (
+      <div className="py-10 flex flex-col items-center gap-6 max-w-7xl mx-auto px-4">
+        <div className="w-full max-w-md bg-zinc-900/90 rounded-xl border border-red-700 p-6 text-center">
+          <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Game in Progress</h2>
+          <p className="text-zinc-300 mb-4">
+            You are currently in a game as the {gameState.userRole}.
+          </p>
+          <p className="text-sm text-zinc-400 mb-4">
+            Game Code: <span className="text-red-400 font-mono">{gameState.gameCode}</span>
+          </p>
+          <button
+            onClick={() => router.push(`/game/battle?gameId=${gameState.gameCode}`)}
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            View Game Status
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-10 flex flex-col items-center gap-6 max-w-7xl mx-auto px-4">
@@ -435,7 +487,13 @@ export default function FootballGame() {
             <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-zinc-500 text-sm text-center">
               Select up to 5 tokens to place on the field
             </p>
+            
           )}
+                  <GameControls
+          isDisabled={selected.length < 5 || !isConnected || loading}
+          onStartGame={handleStartGameContract}
+          onJoinGame={handleJoinGameContract}
+        />
         </div>
 
         {/* Token Selection Panel */}
@@ -446,6 +504,25 @@ export default function FootballGame() {
               Your Player Tokens
             </h3>
             
+            {/* Filter toggle */}
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                onClick={() => setShowOnlyOwned(!showOnlyOwned)}
+                className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                  showOnlyOwned 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                }`}
+              >
+                {showOnlyOwned ? 'Show All' : 'Show Owned Only'}
+              </button>
+              <span className="text-xs text-zinc-400">
+                {tokensData.filter(token => {
+                  return showOnlyOwned ? (token.isOwned || false) : true;
+                }).length} tokens
+              </span>
+            </div>
+            
             {!isConnected ? (
               <div className="text-center py-8">
                 <p className="text-zinc-400 mb-4">Connect your wallet to see your player tokens</p>
@@ -455,11 +532,12 @@ export default function FootballGame() {
               </div>
             ) : loading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400 mx-auto mb-4"></div>
+                <Loader2 className="animate-spin h-8 w-8 text-red-400 mx-auto mb-4" />
                 <p className="text-zinc-400">Loading your tokens...</p>
               </div>
             ) : error ? (
               <div className="text-center py-8">
+                <div className="w-8 h-8 text-red-400 mx-auto mb-2">⚠️</div>
                 <p className="text-red-400 mb-2">Error loading tokens</p>
                 <p className="text-xs text-zinc-500">{error}</p>
               </div>
@@ -476,9 +554,20 @@ export default function FootballGame() {
                   Select up to 5 players ({selected.length}/5)
                 </p>
                 
+
+                
+
+                
                 <div className="grid grid-cols-2 gap-3">
-                  {tokensData.map((token) => {
+                  {tokensData
+                    .filter(token => {
+                      if (!showOnlyOwned) return true;
+                      return token.isOwned || false;
+                    })
+                    .map((token) => {
                     const isSel = !!selected.find((t) => t.id === token.id);
+                    const hasBalance = token.isOwned || false;
+                    
                     return (
                       <div
                         key={token.id}
@@ -486,6 +575,8 @@ export default function FootballGame() {
                         className={`cursor-pointer rounded-lg p-3 text-center border-2 transition-all duration-200 hover:scale-105 ${
                           isSel 
                             ? 'border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20' 
+                            : hasBalance
+                            ? 'border-green-500 bg-green-500/10 shadow-lg shadow-green-500/20'
                             : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/50'
                         }`}
                       >
@@ -506,6 +597,16 @@ export default function FootballGame() {
                           <span className="block text-xs text-zinc-400 mt-1">
                             {token.playerData.position}
                           </span>
+                        )}
+                        {hasBalance && (
+                          <div className="mt-1 text-xs text-green-400">
+                            ✓ Owned
+                          </div>
+                        )}
+                        {!hasBalance && (
+                          <div className="mt-1 text-xs text-zinc-500">
+                            Available
+                          </div>
                         )}
                         {isSel && (
                           <div className="mt-1 text-xs text-red-400">
@@ -534,15 +635,17 @@ export default function FootballGame() {
       </div>
 
       {/* Game Controls - moved outside and below */}
-      <div className="w-full max-w-md mt-[-150px] ml-[-300px] z-100">
-        <GameControls
-          isDisabled={selected.length < 5 || !isConnected || loading}
-          onStartGame={handleStartGameContract}
-          onJoinGame={handleJoinGameContract}
-        />
+      <div className="w-full max-w-md mt-6">
+
+        
+
+        
+
       </div>
 
       {gameCode && <QRCodeModal gameCode={gameCode} onClose={() => setGameCode(null)} />}
+      
+
     </div>
   );
 }
