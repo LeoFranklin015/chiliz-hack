@@ -5,6 +5,16 @@ import ProfileCard from "../components/ui/ProfileCard";
 import PerformancePredictionGraph from "../components/PerformancePredictionGraph";
 import Loader from "../components/Loader";
 import { useSearchParams } from "next/navigation";
+// @ts-ignore
+import { walletClient, client } from "../../lib/client";
+// @ts-ignore
+import {
+  PlayerTokenABI,
+  FANTOKEN_ABI,
+  players as playerList,
+} from "../../lib/const";
+import { parseUnits, formatUnits } from "viem";
+// Removed type-only import for players
 
 interface PlayerCard {
   id: number;
@@ -42,6 +52,8 @@ interface ApiPlayer {
   }>;
 }
 
+type PlayerListItem = (typeof playerList)[number];
+
 export default function PlayerPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerCard | null>(null);
@@ -52,9 +64,16 @@ export default function PlayerPage() {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [buyAmount, setBuyAmount] = useState(1);
   const [teamName, setTeamName] = useState<string>("");
-  
+  const [fanTokenBalance, setFanTokenBalance] = useState<string>("-");
+  const [price, setPrice] = useState<string>("-");
+  const [buyLoading, setBuyLoading] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const [buySuccess, setBuySuccess] = useState<string | null>(null);
+  const [buyStep, setBuyStep] = useState<0 | 1 | 2>(0); // 0: idle, 1: approving, 2: buying
+  const [buyStepStatus, setBuyStepStatus] = useState<string>("");
+
   const searchParams = useSearchParams();
-  const teamId = searchParams.get('team');
+  const teamId = searchParams.get("team");
 
   // Keep selectedPlayer in sync with currentIndex
   useEffect(() => {
@@ -102,7 +121,7 @@ export default function PlayerPage() {
             }
           );
           setPlayers(transformedPlayers);
-          
+
           // Set team name from first player's team
           if (data.response[0]?.statistics[0]?.team?.name) {
             setTeamName(data.response[0].statistics[0].team.name);
@@ -187,6 +206,129 @@ export default function PlayerPage() {
     fetchPlayerDetails();
   }, [selectedPlayer]);
 
+  // Fetch FanToken balance when modal opens or selectedPlayer changes
+  useEffect(() => {
+    let playerData: any = null;
+    if (showBuyModal && selectedPlayer) {
+      console.log("Buy modal opened for player id:", selectedPlayer.id);
+      playerData = playerList.find((p) => p.playerId === selectedPlayer.id);
+      console.log("Player data for this id:", playerData);
+    }
+    async function fetchFanTokenBalance() {
+      setFanTokenBalance("-");
+      if (!playerData || !walletClient) return;
+      try {
+        const [address] = await walletClient.getAddresses();
+        // Log the values being used for the contract call
+        console.log(
+          "About to call balanceOf on address:",
+          playerData.teamContractAddress
+        );
+        console.log("ABI:", FANTOKEN_ABI);
+        console.log("User address:", address);
+        const balance = await client.readContract({
+          address: playerData.teamContractAddress as `0x${string}`,
+          abi: FANTOKEN_ABI,
+          functionName: "balanceOf",
+          args: [address],
+        });
+        console.log("FanToken Balance (raw):", balance);
+        console.log(
+          "FanToken Balance (formatted):",
+          formatUnits(balance as bigint, 18)
+        );
+        setFanTokenBalance(formatUnits(balance as bigint, 18));
+      } catch (e) {
+        console.error("Error fetching FanToken balance:", e);
+        setFanTokenBalance("-");
+      }
+    }
+    if (showBuyModal && selectedPlayer) {
+      fetchFanTokenBalance();
+    }
+  }, [showBuyModal, selectedPlayer]);
+
+  // Fetch PlayerToken price when buyAmount or selectedPlayer changes
+  useEffect(() => {
+    async function fetchPrice() {
+      setPrice("-");
+      const info = playerList.find((p) => p.playerId === selectedPlayer?.id);
+      if (!info) return;
+      try {
+        // Confirmed: This calls calculateTotalPrice on the PlayerToken contract
+        const result = await client.readContract({
+          address: info.tokenAddress as `0x${string}`,
+          abi: PlayerTokenABI,
+          functionName: "calculateTotalPrice",
+          args: [BigInt(buyAmount)],
+        });
+        setPrice(formatUnits(result as bigint, 18));
+      } catch (e) {
+        setPrice("-");
+      }
+    }
+    if (selectedPlayer && buyAmount > 0) {
+      fetchPrice();
+    }
+  }, [selectedPlayer, buyAmount]);
+
+  // Buy Token Handler
+  async function handleBuyTokens() {
+    setBuyLoading(true);
+    setBuyError(null);
+    setBuySuccess(null);
+    setBuyStep(1); // Step 1: Approving
+    setBuyStepStatus("Approving tokens...");
+    const info = playerList.find((p) => p.playerId === selectedPlayer?.id);
+    if (!info || !walletClient) {
+      setBuyError("Missing contract info or wallet");
+      setBuyLoading(false);
+      setBuyStep(0);
+      setBuyStepStatus("");
+      return;
+    }
+    try {
+      console.log("Approving tokens for player:", info);
+      const [address] = await walletClient.getAddresses();
+      // 1. Approve FanToken spend
+      const priceBN = parseUnits(price, 18);
+      const hash = await walletClient.writeContract({
+        address: info.teamContractAddress as `0x${string}`,
+        abi: FANTOKEN_ABI,
+        functionName: "approve",
+        args: [info.tokenAddress, priceBN],
+        account: address,
+      });
+      console.log("Approve hash:", hash);
+      setBuyStepStatus("Waiting for approval transaction...");
+      await client.waitForTransactionReceipt({ hash });
+      setBuyStep(2); // Step 2: Buying
+      setBuyStepStatus("Buying Fan token...");
+      // 2. Purchase PlayerTokens
+      const buyHash = await walletClient.writeContract({
+        address: info.tokenAddress as `0x${string}`,
+        abi: PlayerTokenABI,
+        functionName: "purchaseTokens",
+        args: [BigInt(buyAmount)],
+        account: address,
+      });
+      setBuyStepStatus("Waiting for buy transaction...");
+      await client.waitForTransactionReceipt({ hash: buyHash });
+      setBuyStepStatus("Purchase successful!");
+      setBuySuccess("Purchase successful!");
+      setShowBuyModal(false);
+      setBuyStep(0);
+      setTimeout(() => setBuyStepStatus(""), 1000);
+      console.log("Purchased tokens for player:", info);
+    } catch (e: any) {
+      setBuyError(e?.message || "Transaction failed");
+      setBuyStep(0);
+      setBuyStepStatus("");
+    } finally {
+      setBuyLoading(false);
+    }
+  }
+
   if (loading) {
     return <Loader size="lg" />;
   }
@@ -208,9 +350,11 @@ export default function PlayerPage() {
       <div className="w-1/2 p-8 flex flex-col items-center gap-6">
         <div className="text-center mb-6">
           <h2 className="text-4xl font-bold text-white mb-2">{teamName}</h2>
-          <h3 className="text-2xl font-thin text-red-400 uppercase tracking-wide">Select Player</h3>
+          <h3 className="text-2xl font-thin text-red-400 uppercase tracking-wide">
+            Select Player
+          </h3>
         </div>
-        
+
         {players.length > 0 ? (
           <>
             <div className="flex flex-col items-center gap-4 w-full">
@@ -239,8 +383,9 @@ export default function PlayerPage() {
                 <button
                   className="relative h-12 px-8 py-2 text-white font-mono font-bold uppercase tracking-wide overflow-hidden group"
                   style={{
-                    background: "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
-                   
+                    background:
+                      "linear-gradient(90deg, rgba(207, 10, 10, 0.2) 0%, rgba(207, 10, 10, 0.4) 100%)",
+
                     border: "1px solid rgba(207, 10, 10, 0.5)",
                     boxShadow: "0 0 20px rgba(207, 10, 10, 0.4)",
                   }}
@@ -251,7 +396,7 @@ export default function PlayerPage() {
                 </button>
               </div>
             </div>
-            
+
             {/* Buy Modal */}
             {showBuyModal && selectedPlayer && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -261,8 +406,18 @@ export default function PlayerPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-[linear-gradient(90deg,rgba(207,10,10,0.8)_0%,rgba(207,10,10,1)_100%)] rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          <svg
+                            className="w-6 h-6 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                            />
                           </svg>
                         </div>
                         <div>
@@ -291,24 +446,48 @@ export default function PlayerPage() {
                       <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-700/50">
                         <div className="flex items-center space-x-3 mb-4">
                           <div className="w-8 h-8 bg-[linear-gradient(90deg,rgba(207,10,10,0.6)_0%,rgba(207,10,10,0.8)_100%)] rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
                             </svg>
                           </div>
-                          <span className="text-zinc-200 font-semibold">Player Details</span>
+                          <span className="text-zinc-200 font-semibold">
+                            Player Details
+                          </span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-zinc-400 text-sm">Player:</span>
-                            <span className="text-white font-medium">{selectedPlayer.name}</span>
+                            <span className="text-zinc-400 text-sm">
+                              Player:
+                            </span>
+                            <span className="text-white font-medium">
+                              {selectedPlayer.name}
+                            </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-zinc-400 text-sm">Position:</span>
-                            <span className="text-zinc-300 font-medium">{selectedPlayer.title}</span>
+                            <span className="text-zinc-400 text-sm">
+                              Position:
+                            </span>
+                            <span className="text-zinc-300 font-medium">
+                              {selectedPlayer.title}
+                            </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-zinc-400 text-sm">Availability:</span>
-                            <span className="text-white font-medium">1,000 tokens</span>
+                            <span className="text-zinc-400 text-sm">
+                              Availability:
+                            </span>
+                            <span className="text-white font-medium">
+                              1,000 tokens
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -317,20 +496,84 @@ export default function PlayerPage() {
                       <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-700/50">
                         <div className="flex items-center space-x-3 mb-4">
                           <div className="w-8 h-8 bg-[linear-gradient(90deg,rgba(207,10,10,0.6)_0%,rgba(207,10,10,0.8)_100%)] rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                              />
                             </svg>
                           </div>
-                          <span className="text-zinc-200 font-semibold">Pricing</span>
+                          <span className="text-zinc-200 font-semibold">
+                            Pricing
+                          </span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-zinc-400 text-sm">Token Price:</span>
-                            <span className="text-[#cf0a0a] font-bold text-lg">$2.50</span>
+                            <span className="text-zinc-400 text-sm">
+                              Token Price:
+                            </span>
+                            <span className="text-[#cf0a0a] font-bold text-lg">
+                              {(() => {
+                                const playerData = playerList.find(
+                                  (p) => p.playerId === selectedPlayer.id
+                                );
+                                return price !== "-" && playerData
+                                  ? `${Number(price).toFixed(6)} ${
+                                      playerData.teamCode
+                                    }`
+                                  : "$2.50";
+                              })()}
+                            </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-zinc-400 text-sm">Total Value:</span>
-                            <span className="text-white font-medium">${(buyAmount * 2.50).toFixed(2)}</span>
+                            <span className="text-zinc-400 text-sm">
+                              Total Value:
+                            </span>
+                            <span className="text-white font-medium">
+                              {(() => {
+                                const playerData = playerList.find(
+                                  (p) => p.playerId === selectedPlayer.id
+                                );
+                                return price !== "-" && playerData
+                                  ? `${Number(price).toFixed(6)} ${
+                                      playerData.teamCode
+                                    }`
+                                  : `$${(buyAmount * 2.5).toFixed(2)}`;
+                              })()}
+                            </span>
+                          </div>
+                          {/* Show FanToken balance with team logo */}
+                          <div className="flex justify-between items-center">
+                            <span className="text-zinc-400 text-sm flex items-center gap-2">
+                              Your Balance:
+                              {/* Team logo from teams object using teamId */}
+                              {(() => {
+                                const playerData = playerList.find(
+                                  (p) => p.playerId === selectedPlayer.id
+                                );
+                                if (!playerData) return null;
+                                if (playerData.teamLogoUrl) {
+                                  return (
+                                    <img
+                                      src={playerData.teamLogoUrl}
+                                      alt={playerData.teamName + " logo"}
+                                      className="w-6 h-6 rounded-full border border-zinc-600 bg-zinc-700 object-cover"
+                                    />
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </span>
+                            <span className="text-white font-medium">
+                              {fanTokenBalance}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -341,8 +584,18 @@ export default function PlayerPage() {
                           className="block text-zinc-200 font-semibold flex items-center space-x-2"
                           htmlFor="buy-amount"
                         >
-                          <svg className="w-4 h-4 text-[#cf0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                          <svg
+                            className="w-4 h-4 text-[#cf0a0a]"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                            />
                           </svg>
                           <span>Number of Tokens</span>
                         </label>
@@ -361,6 +614,75 @@ export default function PlayerPage() {
                           <span>Max: 1,000</span>
                         </div>
                       </div>
+                      {buyError && (
+                        <div className="text-red-400 text-sm">{buyError}</div>
+                      )}
+                      {buySuccess && (
+                        <div className="text-green-400 text-sm">
+                          {buySuccess}
+                        </div>
+                      )}
+                      {/* Stepper for buy process */}
+                      {buyLoading && (
+                        <div className="mb-4">
+                          <ol className="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base">
+                            <li
+                              className={`flex-1 flex items-center ${
+                                buyStep >= 1 ? "text-[#cf0a0a]" : ""
+                              }`}
+                            >
+                              <span
+                                className={`flex items-center ${
+                                  buyStep === 1 ? "font-bold" : ""
+                                }`}
+                              >
+                                <span
+                                  className={`w-6 h-6 flex items-center justify-center rounded-full border-2 ${
+                                    buyStep >= 1
+                                      ? "border-[#cf0a0a] bg-[#cf0a0a] text-white"
+                                      : "border-gray-400 bg-white text-gray-400"
+                                  }`}
+                                >
+                                  1
+                                </span>
+                                <span className="ml-2">Approving tokens</span>
+                              </span>
+                              <span
+                                className="flex-1 border-t-2 mx-2"
+                                style={{
+                                  borderColor:
+                                    buyStep >= 2 ? "#cf0a0a" : "#e5e7eb",
+                                }}
+                              ></span>
+                            </li>
+                            <li
+                              className={`flex-1 flex items-center ${
+                                buyStep === 2 ? "text-[#cf0a0a]" : ""
+                              }`}
+                            >
+                              <span
+                                className={`flex items-center ${
+                                  buyStep === 2 ? "font-bold" : ""
+                                }`}
+                              >
+                                <span
+                                  className={`w-6 h-6 flex items-center justify-center rounded-full border-2 ${
+                                    buyStep === 2
+                                      ? "border-[#cf0a0a] bg-[#cf0a0a] text-white"
+                                      : "border-gray-400 bg-white text-gray-400"
+                                  }`}
+                                >
+                                  2
+                                </span>
+                                <span className="ml-2">Buying Fan token</span>
+                              </span>
+                            </li>
+                          </ol>
+                          <div className="mt-2 text-center text-zinc-300 animate-pulse">
+                            {buyStepStatus}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -370,17 +692,16 @@ export default function PlayerPage() {
                       <button
                         onClick={() => setShowBuyModal(false)}
                         className="flex-1 bg-transparent border border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white py-3 rounded-xl transition-all duration-200 font-medium"
+                        disabled={buyLoading}
                       >
                         Cancel
                       </button>
                       <button
-                        onClick={() => {
-                          /* handle buy logic here */
-                          setShowBuyModal(false);
-                        }}
+                        onClick={handleBuyTokens}
                         className="flex-1 bg-[linear-gradient(90deg,rgba(207,10,10,0.2)_0%,rgba(207,10,10,0.4)_100%)] text-[#cf0a0a] font-bold hover:bg-[linear-gradient(90deg,rgba(207,10,10,0.4)_0%,rgba(207,10,10,0.6)_100%)] hover:text-white transition-all duration-300 py-3 rounded-xl border border-red-500/30"
+                        disabled={buyLoading || price === "-"}
                       >
-                        Buy Tokens
+                        {buyLoading ? "Processing..." : "Buy Tokens"}
                       </button>
                     </div>
                   </div>
@@ -399,7 +720,9 @@ export default function PlayerPage() {
       <div className="w-1/2 p-8 overflow-y-auto max-h-screen">
         {selectedPlayer ? (
           <div className="h-full">
-            <h3 className="text-2xl font-bold text-white mb-6">Performance Analysis</h3>
+            <h3 className="text-2xl font-bold text-white mb-6">
+              Performance Analysis
+            </h3>
             <PerformancePredictionGraph
               player={{
                 id: selectedPlayer.id,
