@@ -22,20 +22,29 @@ export async function GET(req: NextRequest) {
       process.cwd(),
       "..",
       "contracts",
-      "player-registry-61-2024.json"
+      "enhanced-player-data-61-2024.json"
     );
     const registryData = JSON.parse(fs.readFileSync(registryPath, "utf8"));
 
     // Create a map of contract addresses to player data for quick lookup
     const playerRegistry = new Map();
-    Object.entries(registryData.players).forEach(
-      ([playerId, player]: [string, any]) => {
-        playerRegistry.set(player.contractAddress.toLowerCase(), {
-          playerId,
-          ...player,
-        });
-      }
-    );
+    registryData.players.forEach((player: any) => {
+      playerRegistry.set(player.tokenAddress.toLowerCase(), {
+        playerId: player.playerId,
+        playerName: player.playerName,
+        teamName: player.teamName,
+        position: player.position,
+        teamCode: player.teamCode,
+        teamLogo: player.teamLogoUrl,
+        teamVenue: player.teamVenue,
+        teamContractAddress: player.teamContractAddress,
+        teamId: player.teamId,
+        image: player.photoUrl,
+        tokenName: player.tokenName,
+        tokenSymbol: player.tokenSymbol,
+        deployedAt: player.deploymentTime,
+      });
+    });
 
     // Fetch token holdings from Chiliz API
     const apiUrl = `https://spicy-explorer.chiliz.com/api?module=account&action=tokenlist&address=${address}`;
@@ -70,21 +79,7 @@ export async function GET(req: NextRequest) {
 
           return {
             ...token,
-            playerData: {
-              playerId: playerData.playerId,
-              playerName: playerData.playerName,
-              teamName: playerData.teamName,
-              position: playerData.position,
-              teamCode: playerData.teamCode,
-              teamLogo: playerData.teamLogo,
-              teamVenue: playerData.teamVenue,
-              teamContractAddress: playerData.teamContractAddress,
-              teamId: playerData.teamId,
-              image: playerData.photoURL,
-              tokenName: playerData.tokenName,
-              tokenSymbol: playerData.tokenSymbol,
-              deployedAt: playerData.deployedAt,
-            },
+            playerData: playerData,
           };
         });
     }
@@ -122,7 +117,7 @@ export async function GET(req: NextRequest) {
       address: address,
       leagueId: registryData.leagueId,
       season: registryData.season,
-      lastUpdated: registryData.lastUpdated,
+      lastUpdated: registryData.fetchTime,
       filters: {
         team: team || null,
         position: position || null,
