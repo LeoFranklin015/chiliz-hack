@@ -132,15 +132,16 @@ export default function TopNav() {
                 >
                   Tickets
                 </Link>
-              </div>
-
-              {/* Faucet Button */}
-              <Button
-                className="ml-2 mr-2 bg-[#cf0a0a] text-white font-bold px-4 py-2 rounded-lg hover:bg-[#a30808] transition-all"
+                <Button
+                className="ml-2 mr-2  text-white font-bold rounded-lg hover:bg-[#a30808] transition-all"
                 onClick={() => setFaucetOpen(true)}
               >
                 Faucet
               </Button>
+              </div>
+
+              {/* Faucet Button */}
+           
 
               {/* Connect Button with custom shape */}
               <CustomConnectButton />

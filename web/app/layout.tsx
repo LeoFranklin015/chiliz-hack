@@ -12,7 +12,7 @@ const tomorrow = Tomorrow({
 });
 
 export const metadata: Metadata = {
-  title: "ScoreX - Fantasy Sports Tokenization Platform",
+  title: "ScoreZ - Player Tokenization Platform",
   description:
     "Transform players into tradeable tokens. Performance drives value. Real rewards for real performance.",
 };

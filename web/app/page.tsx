@@ -7,7 +7,7 @@ import { motion } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 import FootballScene from "./components/FootBallScene"
 import ScoreZText from "./components/ScoreZText"
-import FeaturesSection from "./components/FeaturesSection"
+import FeaturesSection, { HowItWorksSection ,}  from "./components/FeaturesSection"
 import NavBar1 from "./components/ui/NavBar1"
 
 // Component to handle navbar padding
@@ -194,6 +194,9 @@ export default function Home() {
         {/* Section 2: Features */}
         <section className="h-screen snap-start">          
           <FeaturesSection />
+        </section>
+        <section className="h-screen snap-start">          
+          <HowItWorksSection />
         </section>
       </div>
     </>
