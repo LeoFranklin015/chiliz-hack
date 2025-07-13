@@ -14,6 +14,7 @@ contract TicketContract  {
 
     mapping(uint256 => TicketListing) public ticketListings; // matchId => listing
     mapping(uint256 => mapping(address => bool)) public hasPurchased; // matchId => buyer => bool
+    uint256[] public activeMatchIds; // Track active match IDs
 
     event TicketListed(
         uint256 indexed matchId,
@@ -48,6 +49,7 @@ contract TicketContract  {
             paymentToken: IERC20(paymentToken)
         });
 
+        activeMatchIds.push(matchId);
         emit TicketListed(matchId, price, quantity, msg.sender, paymentToken);
     }
 
@@ -81,5 +83,24 @@ contract TicketContract  {
     {
         TicketListing storage listing = ticketListings[matchId];
         return (listing.price, listing.available, listing.seller, address(listing.paymentToken));
+    }
+
+    function listAllTickets() external view returns (TicketListing[] memory) {
+        uint256 totalListings = 0;
+        for (uint256 i = 0; i < activeMatchIds.length; i++) {
+            if (ticketListings[activeMatchIds[i]].available > 0) {
+                totalListings++;
+            }
+        }
+        
+        TicketListing[] memory result = new TicketListing[](totalListings);
+        uint256 index = 0;
+        for (uint256 i = 0; i < activeMatchIds.length; i++) {
+            if (ticketListings[activeMatchIds[i]].available > 0) {
+                result[index] = ticketListings[activeMatchIds[i]];
+                index++;
+            }
+        }
+        return result;
     }
 }
