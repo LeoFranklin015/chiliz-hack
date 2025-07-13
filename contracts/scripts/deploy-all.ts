@@ -481,14 +481,51 @@ async function deployTokensForTeam(
 
     try {
       // Check if player already has a contract in registry
-      if (registry.players[player.player]) {
+      const existingPlayer = registry.players[player.player];
+      if (existingPlayer) {
         console.log(
-          `     ⏭️  Skipping ${player.firstname} ${
+          `     🔄 Found existing contract for ${player.firstname} ${
             player.lastname
-          } - already deployed at ${
-            registry.players[player.player].tokenAddress
-          }`
+          } at ${existingPlayer.tokenAddress}`
         );
+        
+        // Check if data needs updating
+        const fullName = `${player.firstname} ${player.lastname}`;
+        const needsUpdate = await checkIfDataNeedsUpdate(
+          existingPlayer,
+          player,
+          fullName,
+          leagueName,
+          config,
+          adapter
+        );
+        
+        if (needsUpdate) {
+          console.log(`       📝 Updating contract data...`);
+          await updateExistingContract(
+            existingPlayer.tokenAddress,
+            player,
+            fullName,
+            leagueName,
+            config,
+            adapter
+          );
+          
+          // Update registry with new data
+          registry.players[player.player] = {
+            ...existingPlayer,
+            playerName: fullName,
+            teamName: player.teamName,
+            teamCode: player.teamCode,
+            nationality: player.nationality,
+            age: player.age
+          };
+          
+          console.log(`       ✅ Contract data updated successfully`);
+        } else {
+          console.log(`       ✅ Contract data is up to date`);
+        }
+        
         continue;
       }
 
@@ -766,6 +803,126 @@ function generateMockStats(): PlayerStats {
     red_cards: Math.floor(Math.random() * 2),
     lastUpdated: Math.floor(Date.now() / 1000),
   };
+}
+
+/**
+ * Check if existing contract data needs updating
+ */
+async function checkIfDataNeedsUpdate(
+  existingPlayer: RegistryPlayer,
+  player: PlayerWithTeam,
+  fullName: string,
+  leagueName: string,
+  config: Config,
+  adapter: ApiFootballAdapter
+): Promise<boolean> {
+  // Check if basic player info has changed
+  if (
+    existingPlayer.playerName !== fullName ||
+    existingPlayer.teamName !== player.teamName ||
+    existingPlayer.nationality !== player.nationality ||
+    existingPlayer.age !== player.age
+  ) {
+    console.log(`       📊 Basic player info changed`);
+    return true;
+  }
+
+  // Check if stats need updating (fetch latest stats)
+  try {
+    const apiPlayerStats = await adapter.fetchPlayerStats(
+      player.player,
+      config.leagueId,
+      config.season
+    );
+
+    if (apiPlayerStats && apiPlayerStats.statistics.length > 0) {
+      const playerStats = apiPlayerStats.statistics[0];
+      const currentStats = existingPlayer.statistics;
+      
+      if (
+        currentStats &&
+        (currentStats.goals !== (playerStats.goals.total || 0) ||
+         currentStats.assists !== (playerStats.goals.assists || 0) ||
+         currentStats.appearances !== (playerStats.games.appearences || 0))
+      ) {
+        console.log(`       📊 Player stats changed`);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.log(`       ⚠️  Could not check stats update - assuming update needed`);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Update existing contract with new data
+ */
+async function updateExistingContract(
+  tokenAddress: string,
+  player: PlayerWithTeam,
+  fullName: string,
+  leagueName: string,
+  config: Config,
+  adapter: ApiFootballAdapter
+): Promise<void> {
+  const PlayerToken = await ethers.getContractFactory("PlayerToken");
+  const playerToken = PlayerToken.attach(tokenAddress) as PlayerTokenType;
+
+  // Fetch latest stats and photo data
+  let stats: PlayerStats;
+  let photoUrl = "";
+  let teamLogoUrl = "";
+
+  try {
+    const apiPlayerStats = await adapter.fetchPlayerStats(
+      player.player,
+      config.leagueId,
+      config.season
+    );
+
+    if (apiPlayerStats && apiPlayerStats.statistics.length > 0) {
+      const playerStats = apiPlayerStats.statistics[0];
+      stats = {
+        goals: playerStats.goals.total || 0,
+        assists: playerStats.goals.assists || 0,
+        penalties_scored: playerStats.penalty.scored || 0,
+        shots_total: playerStats.shots.total || 0,
+        shots_on_target: playerStats.shots.on || 0,
+        duels_total: playerStats.duels.total || 0,
+        duels_won: playerStats.duels.won || 0,
+        tackles_total: playerStats.tackles.total || 0,
+        appearances: playerStats.games.appearences || 0,
+        yellow_cards: playerStats.cards.yellow || 0,
+        red_cards: playerStats.cards.red || 0,
+        lastUpdated: Math.floor(Date.now() / 1000),
+      };
+      
+      photoUrl = apiPlayerStats.player.photo || "";
+      teamLogoUrl = playerStats.team.logo || "";
+      
+      console.log(`       ✅ Fetched updated stats and photo data`);
+    } else {
+      stats = generateMockStats();
+      console.log(`       ⚠️  Using mock stats for update`);
+    }
+  } catch (error) {
+    stats = generateMockStats();
+    console.log(`       ⚠️  Using mock stats for update (API failed)`);
+  }
+
+  // Update player stats on contract
+  try {
+    const statsTx = await playerToken.updatePlayerStats(stats, {
+      gasLimit: 1000000,
+    });
+    await statsTx.wait();
+    console.log(`       ✅ Player stats updated on contract`);
+  } catch (error) {
+    console.error(`       ❌ Failed to update stats on contract:`, error);
+  }
 }
 
 /**
